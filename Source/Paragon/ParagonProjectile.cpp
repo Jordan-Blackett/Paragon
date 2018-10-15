@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ParagonProjectile.h"
+#include "Paragon.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/SphereComponent.h"
@@ -15,13 +16,12 @@ AParagonProjectile::AParagonProjectile()
 	CollisionComp->AlwaysLoadOnServer = true;
 	CollisionComp->bTraceComplexOnMove = true;
 	CollisionComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	CollisionComp->SetCollisionObjectType(ECollisionChannel::);
+	CollisionComp->SetCollisionObjectType(COLLISION_PROJECTILE);
 	CollisionComp->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
 	CollisionComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	RootComponent = CollisionComp;
-
 	ParticleComp = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("ParticleComp"));
 	ParticleComp->bAutoActivate = false;
 	ParticleComp->bAutoDestroy = false;
@@ -81,23 +81,23 @@ void AParagonProjectile::Explode(const FHitResult& Impact)
 		ParticleComp->Deactivate();
 	}
 
-	//// effects and damage origin shouldn't be placed inside mesh at impact point
-	//const FVector NudgedImpactLocation = Impact.ImpactPoint + Impact.ImpactNormal * 10.0f;
+	// effects and damage origin shouldn't be placed inside mesh at impact point
+	const FVector NudgedImpactLocation = Impact.ImpactPoint + Impact.ImpactNormal * 10.0f;
 
-	//if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType)
-	//{
-	//	UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
-	//}
+	if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType)
+	{
+		//UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
+	}
 
 	//if (ExplosionTemplate)
 	//{
 	//	FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), NudgedImpactLocation);
-	//	AShooterExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AShooterExplosionEffect>(ExplosionTemplate, SpawnTransform);
-	//	if (EffectActor)
-	//	{
-	//		EffectActor->SurfaceHit = Impact;
-	//		UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
-	//	}
+	//	//AShooterExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AShooterExplosionEffect>(ExplosionTemplate, SpawnTransform);
+	//	//if (EffectActor)
+	//	//{
+	//	//	EffectActor->SurfaceHit = Impact;
+	//	//	UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
+	//	//}
 	//}
 
 	bExploded = true;
@@ -124,7 +124,7 @@ void AParagonProjectile::OnRep_Exploded()
 
 	//const FVector StartTrace = GetActorLocation() - ProjDirection * 200;
 	//const FVector EndTrace = GetActorLocation() + ProjDirection * 150;
-	//FHitResult Impact;
+	FHitResult Impact;
 
 	//if (!GetWorld()->LineTraceSingleByChannel(Impact, StartTrace, EndTrace, COLLISION_PROJECTILE, FCollisionQueryParams(SCENE_QUERY_STAT(ProjClient), true, Instigator)))
 	//{
@@ -133,7 +133,7 @@ void AParagonProjectile::OnRep_Exploded()
 	//	Impact.ImpactNormal = -ProjDirection;
 	//}
 
-	//Explode(Impact);
+	Explode(Impact);
 }
 ///CODE_SNIPPET_END
 
@@ -149,5 +149,5 @@ void AParagonProjectile::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(AShooterProjectile, bExploded);
+	DOREPLIFETIME(AParagonProjectile, bExploded);
 }

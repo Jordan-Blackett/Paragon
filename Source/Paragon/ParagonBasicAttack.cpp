@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ParagonBasicAttack.h"
-#include "Net/UnrealNetwork.h"
+#include "Paragon.h"
 #include "ParagonCharacter.h"
 #include "Components/SkeletalMeshComponent.h"
 
@@ -667,8 +667,7 @@ FHitResult AParagonBasicAttack::WeaponTrace(const FVector& StartTrace, const FVe
 	TraceParams.bReturnPhysicalMaterial = true;
 
 	FHitResult Hit(ForceInit);
-	//GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
-	//GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, ECC_Visibility, TraceParams);
+	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
 
 	return Hit;
 }
