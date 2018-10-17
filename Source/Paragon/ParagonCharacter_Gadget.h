@@ -23,7 +23,7 @@ public:
 
 	// Ability Basic Attack - Plasma Blast
 	UPROPERTY()
-	AParagonBasicAttack_Projectile* BasicAttack; // = FObjectInitializer::CreateDefaultSubObject<AParagonBasicAttack_Projectile>(TEXT("CameraBoom"));//NewObject<AParagonBasicAttack_Projectile>();
+	AParagonBasicAttack_Projectile* BasicAttack;
 
 	// Basic Attack Config
 	UPROPERTY(EditDefaultsOnly, Category = Ability_BasicAttack)

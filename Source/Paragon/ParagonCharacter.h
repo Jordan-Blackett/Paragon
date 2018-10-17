@@ -39,6 +39,8 @@ public:
 
 	void GetViewPoint(FVector& CameraLocation, FRotator& CamRotation);
 
+
+
 	// --- Accessor and Mutator ---
 
 	// Accessor function for initial health
@@ -48,6 +50,9 @@ public:
 	// Accessor function for current health 
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetCurrentHealth();
+
+	UFUNCTION()
+	void SetCurrentHealth(float NewHealth);
 
 	// Accessor function for initial health
 	UFUNCTION(BlueprintPure, Category = "Stats")

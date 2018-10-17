@@ -5,6 +5,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "ParagonExplosionEffect.h"
 
 
 // Sets default values
@@ -44,9 +46,9 @@ AParagonProjectile::AParagonProjectile()
 void AParagonProjectile::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	ProjectileMovementComp->OnProjectileStop.AddDynamic(this, &AParagonProjectile::OnImpact);
-	CollisionComp->MoveIgnoreActors.Add(GetOwner()); //Instigator
 
+	ProjectileMovementComp->OnProjectileStop.AddDynamic(this, &AParagonProjectile::OnImpact);
+	CollisionComp->MoveIgnoreActors.Add(Cast<AActor>(Instigator)); //Instigator GetOwner()
 	AParagonBasicAttack_Projectile* OwnerWeapon = Cast<AParagonBasicAttack_Projectile>(GetOwner());
 	if (OwnerWeapon)
 	{
@@ -84,21 +86,21 @@ void AParagonProjectile::Explode(const FHitResult& Impact)
 	// effects and damage origin shouldn't be placed inside mesh at impact point
 	const FVector NudgedImpactLocation = Impact.ImpactPoint + Impact.ImpactNormal * 10.0f;
 
-	if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType)
+	if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType && Role == ROLE_Authority)
 	{
-		//UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
+		UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
 	}
 
-	//if (ExplosionTemplate)
-	//{
-	//	FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), NudgedImpactLocation);
-	//	//AShooterExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AShooterExplosionEffect>(ExplosionTemplate, SpawnTransform);
-	//	//if (EffectActor)
-	//	//{
-	//	//	EffectActor->SurfaceHit = Impact;
-	//	//	UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
-	//	//}
-	//}
+	if (ExplosionTemplate)
+	{
+		FTransform const SpawnTransform(Impact.ImpactNormal.Rotation(), NudgedImpactLocation);
+		AParagonExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AParagonExplosionEffect>(ExplosionTemplate, SpawnTransform);
+		if (EffectActor)
+		{
+			EffectActor->SurfaceHit = Impact;
+			UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
+		}
+	}
 
 	bExploded = true;
 }
@@ -111,10 +113,10 @@ void AParagonProjectile::DisableAndDestroy()
 	//	ProjAudioComp->FadeOut(0.1f, 0.f);
 	//}
 
-	//MovementComp->StopMovementImmediately();
+	ProjectileMovementComp->StopMovementImmediately();
 
-	//// give clients some time to show explosion
-	//SetLifeSpan(2.0f);
+	// give clients some time to show explosion
+	SetLifeSpan(2.0f);
 }
 
 ///CODE_SNIPPET_START: AActor::GetActorLocation AActor::GetActorRotation

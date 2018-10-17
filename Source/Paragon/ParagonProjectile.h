@@ -9,6 +9,7 @@
 
 class UProjectileMovementComponent;
 class USphereComponent;
+class AParagonExplosionEffect;
 
 UCLASS()
 class PARAGON_API AParagonProjectile : public AActor
@@ -43,8 +44,8 @@ public:
 protected:
 
 	/** effects for explosion */
-	//UPROPERTY(EditDefaultsOnly, Category = Effects)
-	//TSubclassOf<class AShooterExplosionEffect> ExplosionTemplate;
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
 
 	/** controller that fired me (cache for damage calculations) */
 	TWeakObjectPtr<AController> MyController;

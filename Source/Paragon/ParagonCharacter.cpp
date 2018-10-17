@@ -149,6 +149,11 @@ float AParagonCharacter::GetCurrentHealth()
 	return CurrentHealth;
 }
 
+void AParagonCharacter::SetCurrentHealth(float NewHealth)
+{
+	CurrentHealth = NewHealth;
+}
+
 float AParagonCharacter::GetInitialMana()
 {
 	return InitialMana;
