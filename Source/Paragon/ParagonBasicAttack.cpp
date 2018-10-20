@@ -612,18 +612,19 @@ FVector AParagonBasicAttack::GetCameraAim() const
 
 FVector AParagonBasicAttack::GetCameraDamageStartLocation(const FVector& AimDir) const
 {
-	AParagonCharacter* PC = MyPawn ? Cast<AParagonCharacter>(MyPawn->Controller) : NULL;
+	AParagonCharacter* PC = MyPawn ? Cast<AParagonCharacter>(MyPawn) : NULL; //MyPawn->Controller
+	AParagonCharacter* const PlayerController = Instigator ? Cast<AParagonCharacter>(Instigator->Controller) : NULL;
 	//AShooterAIController* AIPC = MyPawn ? Cast<AShooterAIController>(MyPawn->Controller) : NULL;
 	FVector OutStartTrace = FVector::ZeroVector;
 
-	if (PC)
+	if (MyPawn)
 	{
 		// use player's camera
 		FRotator UnusedRot;
-		PC->GetViewPoint(OutStartTrace, UnusedRot);
-
+		MyPawn->GetViewPoint(OutStartTrace, UnusedRot);
+		MyPawn->GetIsLocallyControlled();
 		// Adjust trace so there is nothing blocking the ray between the camera and the pawn, and calculate distance from adjusted start
-		OutStartTrace = OutStartTrace + AimDir * ((Instigator->GetActorLocation() - OutStartTrace) | AimDir);
+		//OutStartTrace = OutStartTrace + AimDir * ((Instigator->GetActorLocation() - OutStartTrace) | AimDir);
 	}
 	//else if (AIPC)
 	//{

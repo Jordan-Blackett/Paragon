@@ -23,7 +23,6 @@ void AParagonCharacter_Gadget::BeginPlay()
 	Super::BeginPlay();
 
 	BasicAttack = NewObject<AParagonBasicAttack_Projectile>(this, AParagonBasicAttack_Projectile::StaticClass(), TEXT("BasicAttack"));
-
 	BasicAttack->InitBasicAttack(Cast<AParagonCharacter>(this));
 
 	// Ability Basic Attack - Plasma Blast

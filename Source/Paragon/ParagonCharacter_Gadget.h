@@ -32,9 +32,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Ability_BasicAttack)
 	FProjectileWeaponData ProjectileConfig;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float Initiatest;
-
 protected:
 	virtual void BeginPlay();
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -45,7 +42,7 @@ private:
 
 	// Ability 1 - Plasma Blast
 
-	//** Fires a projectile. */
+	// Fires a projectile
 	void AttemptOnFire();
 	void OnFire(FRotator SpawnRotation, FVector SpawnLocation);
 

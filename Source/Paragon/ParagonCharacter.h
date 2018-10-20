@@ -38,9 +38,8 @@ public:
 	// Helper functions
 
 	void GetViewPoint(FVector& CameraLocation, FRotator& CamRotation);
-
-
-
+	bool GetIsLocallyControlled();
+	
 	// --- Accessor and Mutator ---
 
 	// Accessor function for initial health

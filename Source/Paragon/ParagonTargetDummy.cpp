@@ -14,6 +14,8 @@ AParagonTargetDummy::AParagonTargetDummy()
 	// Init text render comp
 	CharText = CreateDefaultSubobject<UTextRenderComponent>(FName("CharText"));
 	CharText->SetupAttachment(GetRootComponent());
+	// Set a relative location
+	CharText->SetRelativeLocation(FVector(0, 0, 0));
 
 	UpdateCharText();
 }

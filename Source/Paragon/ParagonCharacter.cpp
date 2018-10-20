@@ -134,7 +134,15 @@ void AParagonCharacter::MoveRight(float Value)
 
 void AParagonCharacter::GetViewPoint(FVector & CameraLocation, FRotator & CamRotation)
 {
-	GetController()->GetPlayerViewPoint(CameraLocation, CamRotation);
+	if (GetController())
+	{
+		GetController()->GetPlayerViewPoint(CameraLocation, CamRotation);
+	}
+}
+
+bool AParagonCharacter::GetIsLocallyControlled()
+{
+	return IsLocallyControlled();
 }
 
 // --- Accessor and Mutator ---
