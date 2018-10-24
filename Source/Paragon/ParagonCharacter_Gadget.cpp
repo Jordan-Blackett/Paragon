@@ -34,49 +34,40 @@ void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * Playe
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// Bind fire event
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::AttemptOnFire);
+	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::OnStartFire);
+	//PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_Gadget::OnStopFire);
 }
 
-void AParagonCharacter_Gadget::AttemptOnFire()
-{
-	BasicAttack->FireWeapon();
-}
-
-void AParagonCharacter_Gadget::OnFire(FRotator SpawnRotation, FVector SpawnLocation)
-{
-	//// Try and fire a projectile
-	//if (Ability1_ProjectileClass != NULL)
-	//{
-	//	UWorld* const World = GetWorld();
-	//	if (World != NULL)
-	//	{
-	//		// Set Spawn Collision Handling Override
-	//		FActorSpawnParameters ActorSpawnParams;
-	//		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn; //ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
-	//																										   // Spawn the projectile at the muzzle
-	//		//World->SpawnActor<ABorderlandsClone2Projectile>(Ability1_ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-	//	}
-	//}
-
-	//// Try and play the sound if specified
-	//if (Ability1_FireSound != NULL)
-	//{
-	//	//UGameplayStatics::PlaySoundAtLocation(this, Ability1_FireSound, GetActorLocation());
-	//}
-
-	////UAnimInstance* AnimInstance = character->GetAnimInstance();
-	//// try and play a firing animation if specified
-	////if (FireAnimation != NULL)
-	////{
-	////	// Get the animation object for the arms mesh
-	////	UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
-	////	if (AnimInstance != NULL)
-	////	{
-	////		AnimInstance->Montage_Play(FireAnimation, 1.f);
-	////	}
-	////}
-}
+//void AParagonCharacter_Gadget::OnStartFire()
+//{
+//	StartWeaponFire();
+//
+//	//BasicAttack->FireWeapon();
+//}
+//
+//void AParagonCharacter_Gadget::StartWeaponFire(FRotator SpawnRotation, FVector SpawnLocation)
+//{
+//	if (!bWantsToFire)
+//	{
+//		bWantsToFire = true;
+//		if (BasicAttack)
+//		{
+//			BasicAttack->FireWeapon();
+//		}
+//	}
+//}
+//
+//void AShooterCharacter::StopWeaponFire()
+//{
+//	if (bWantsToFire)
+//	{
+//		bWantsToFire = false;
+//		if (CurrentWeapon)
+//		{
+//			CurrentWeapon->StopFire();
+//		}
+//	}
+//}
 
 // --- Netcode ---
 

@@ -40,9 +40,17 @@ private:
 
 	// --- Abilities ---
 
-	// Ability 1 - Plasma Blast
+	//////////////////////////////////////////////////////////////////////////
+	// Ability 1 - Burst Fire
 
 	//Fires a hitscan
-	void AttemptOnFire();
+	void OnStartFire();
+	void OnStopFire();
+
+	/** [local] starts/stops weapon fire */
+	void StartWeaponFire();
+	void StopWeaponFire();
+
+	bool bWantsToFire = false;
 	
 };

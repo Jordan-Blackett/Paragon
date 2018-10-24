@@ -28,12 +28,44 @@ void AParagonCharacter_LtBelica::SetupPlayerInputComponent(UInputComponent * Pla
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// Bind fire event
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_LtBelica::AttemptOnFire);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_LtBelica::OnStartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_LtBelica::OnStopFire);
 }
 
-void AParagonCharacter_LtBelica::AttemptOnFire()
+//////////////////////////////////////////////////////////////////////////
+// Ability 1 - Burst Fire
+
+void AParagonCharacter_LtBelica::OnStartFire()
 {
-	BasicAttack->FireWeapon();
+	StartWeaponFire();
 }
 
+void AParagonCharacter_LtBelica::OnStopFire()
+{
+	StopWeaponFire();
+}
+
+void AParagonCharacter_LtBelica::StartWeaponFire()
+{
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		if (BasicAttack)
+		{
+			BasicAttack->StartFire();
+		}
+	}
+}
+
+void AParagonCharacter_LtBelica::StopWeaponFire()
+{
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		if (BasicAttack)
+		{
+			BasicAttack->StopFire();
+		}
+	}
+}
 

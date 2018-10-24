@@ -6,6 +6,103 @@
 #include "GameFramework/Info.h"
 #include "ParagonBasicAttack.generated.h"
 
+namespace EWeaponState
+{
+	enum Type
+	{
+		Idle,
+		Firing,
+		Reloading,
+	};
+}
+
+USTRUCT()
+struct FWeaponEffectsData
+{
+	GENERATED_USTRUCT_BODY()
+
+	/** FX for muzzle flash */
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	UParticleSystem* MuzzleFX;
+
+	/** camera shake on firing */
+	//UPROPERTY(EditDefaultsOnly, Category = Effects)
+	//TSubclassOf<UCameraShake> FireCameraShake;
+
+	/** force feedback effect to play when the weapon is fired */
+	//UPROPERTY(EditDefaultsOnly, Category = Effects)
+	//UForceFeedbackEffect *FireForceFeedback;
+
+	///** is muzzle FX looped? */
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	uint32 bLoopedMuzzleFX : 1;
+
+	FWeaponEffectsData()
+	{
+		MuzzleFX = nullptr;
+		bLoopedMuzzleFX = 1;
+	}
+};
+
+USTRUCT()
+struct FWeaponSoundsData
+{
+	GENERATED_USTRUCT_BODY()
+
+	///** single fire sound (bLoopedFireSound not set) */
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//USoundCue* FireSound;
+
+	///** looped fire sound (bLoopedFireSound set) */
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//USoundCue* FireLoopSound;
+
+	///** finished burst sound (bLoopedFireSound set) */
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//USoundCue* FireFinishSound;
+
+	///** out of ammo sound */
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//USoundCue* OutOfAmmoSound;
+
+	///** reload sound */
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//USoundCue* ReloadSound;
+
+	/** is fire sound looped? */
+	UPROPERTY(EditDefaultsOnly, Category = Sound)
+	uint32 bLoopedFireSound : 1;
+
+	FWeaponSoundsData()
+	{
+		//FireSound = nullptr;
+		//FireLoopSound = nullptr;
+		//FireFinishSound = nullptr;
+		//OutOfAmmoSound = nullptr;
+		//ReloadSound = nullptr;
+		bLoopedFireSound = 1;
+	}
+};
+
+USTRUCT()
+struct FWeaponAnimationData
+{
+	GENERATED_USTRUCT_BODY()
+
+	///** fire animations */
+	//UPROPERTY(EditDefaultsOnly, Category = Animation)
+	//FWeaponAnim FireAnim;
+
+	/** is fire animation looped? */
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	uint32 bLoopedFireAnim : 1;
+
+	FWeaponAnimationData()
+	{
+		bLoopedFireAnim = 1;
+	}
+};
+
 USTRUCT()
 struct FWeaponData
 {
@@ -39,6 +136,19 @@ struct FWeaponData
 	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
 	FName FirePointAttachPoint;
 
+	/** firing audio (bLoopedFireSound set) */
+	//UPROPERTY(Transient)
+	//	UAudioComponent* FireAC;
+
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	FWeaponEffectsData WeaponEffects;
+
+	UPROPERTY(EditDefaultsOnly, Category = Sounds)
+	FWeaponSoundsData WeaponSounds;
+
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	FWeaponAnimationData WeaponAnimations;
+
 	/** defaults */
 	FWeaponData()
 	{
@@ -53,6 +163,7 @@ struct FWeaponData
 };
 
 class AParagonCharacter;
+class UParticleSystemComponent;
 
 UCLASS()
 class PARAGON_API AParagonBasicAttack : public AInfo
@@ -117,6 +228,89 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	// Reading data
 
+	/** get current weapon state */
+	EWeaponState::Type GetCurrentState() const;
+
+	/** get current ammo amount (total) */
+	int32 GetCurrentAmmo() const;
+
+	/** get current ammo amount (clip) */
+	int32 GetCurrentAmmoInClip() const;
+
+	/** get clip size */
+	int32 GetAmmoPerClip() const;
+
+	/** get max ammo amount */
+	int32 GetMaxAmmo() const;
+
+	/** get weapon mesh (needs pawn owner to determine variant) */
+	//USkeletalMeshComponent* GetWeaponMesh() const;
+
+	/** get pawn owner */
+	//UFUNCTION(BlueprintCallable, Category = "Game|Weapon")
+	//class AShooterCharacter* GetPawnOwner() const;
+
+	///** icon displayed on the HUD when weapon is equipped as primary */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon PrimaryIcon;
+
+	///** icon displayed on the HUD when weapon is secondary */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon SecondaryIcon;
+
+	///** bullet icon used to draw current clip (left side) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon PrimaryClipIcon;
+
+	///** bullet icon used to draw secondary clip (left side) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon SecondaryClipIcon;
+
+	///** how many icons to draw per clip */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//float AmmoIconsCount;
+
+	///** defines spacing between primary ammo icons (left side) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//int32 PrimaryClipIconOffset;
+
+	///** defines spacing between secondary ammo icons (left side) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//int32 SecondaryClipIconOffset;
+
+	///** crosshair parts icons (left, top, right, bottom and center) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon Crosshair[5];
+
+	///** crosshair parts icons when targeting (left, top, right, bottom and center) */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//FCanvasIcon AimingCrosshair[5];
+
+	///** only use red colored center part of aiming crosshair */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//bool UseLaserDot;
+
+	///** false = default crosshair */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//bool UseCustomCrosshair;
+
+	///** false = use custom one if set, otherwise default crosshair */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//bool UseCustomAimingCrosshair;
+
+	///** true - crosshair will not be shown unless aiming with the weapon */
+	//UPROPERTY(EditDefaultsOnly, Category = HUD)
+	//bool bHideCrosshairWhileNotAiming;
+
+	/** check if weapon has infinite ammo (include owner's cheats) */
+	bool HasInfiniteAmmo() const;
+
+	/** check if weapon has infinite clip (include owner's cheats) */
+	bool HasInfiniteClip() const;
+
+	///** set the weapon's owning pawn */
+	//void SetOwningPawn(AShooterCharacter* AShooterCharacter);
+
 public:	
 	// Sets default values for this actor's properties
 	AParagonBasicAttack();
@@ -128,7 +322,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	FWeaponData WeaponConfig;
 
-	UPROPERTY() //UPROPERTY(Transient, ReplicatedUsing = OnRep_MyPawn)
+	UPROPERTY()
 	class AParagonCharacter* MyPawn = nullptr;
 
 public:	
@@ -147,6 +341,7 @@ private:
 	//UWorld* SceneWorld = nullptr;
 
 protected:
+
 	//////////////////////////////////////////////////////////////////////////
 	// Input - server side
 
@@ -207,7 +402,7 @@ protected:
 	virtual void OnBurstFinished();
 
 	/** update weapon state */
-	//void SetWeaponState(EWeaponState::Type NewState);
+	void SetWeaponState(EWeaponState::Type NewState);
 
 	/** determine current weapon state */
 	void DetermineWeaponState();
@@ -236,13 +431,31 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	//
 
+	/** spawned component for muzzle FX */
+	UParticleSystemComponent* MuzzlePSC = nullptr;
+
+	/** is fire animation playing? */
+	uint32 bPlayingFireAnim : 1;
+
 	/** is weapon fire active? */
 	uint32 bWantsToFire : 1;
 
 	/** is reload animation playing? */
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_Reload)
 	uint32 bPendingReload : 1;
-	
+
+	/** is equip animation playing? */
+	uint32 bPendingEquip : 1;
+
+	/** weapon is refiring */
+	uint32 bRefiring;
+
+	/** current weapon state */
+	EWeaponState::Type CurrentState;
+
+	/** time of last successful weapon fire */
+	float LastFireTime;
+
 	/** current total ammo */
 	UPROPERTY(Transient, Replicated)
 	int32 CurrentAmmo;
@@ -255,7 +468,16 @@ protected:
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
 	int32 BurstCounter;
 
-	/** time of last successful weapon fire */
-	float LastFireTime;
+	/** Handle for efficient management of OnEquipFinished timer */
+	FTimerHandle TimerHandle_OnEquipFinished;
+
+	/** Handle for efficient management of StopReload timer */
+	FTimerHandle TimerHandle_StopReload;
+
+	/** Handle for efficient management of ReloadWeapon timer */
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+	/** Handle for efficient management of HandleFiring timer */
+	FTimerHandle TimerHandle_HandleFiring;
 
 };

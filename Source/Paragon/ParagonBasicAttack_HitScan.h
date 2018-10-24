@@ -7,7 +7,7 @@
 #include "GameFramework/DamageType.h"
 #include "ParagonBasicAttack_HitScan.generated.h"
 
-class AShooterImpactEffect;
+//class AShooterImpactEffect;
 
 USTRUCT()
 struct FInstantHitInfo
@@ -65,8 +65,8 @@ struct FInstantWeaponData
 	UPROPERTY(EditDefaultsOnly, Category = HitVerification)
 	float AllowedViewDotHitDir;
 
-	//UPROPERTY(EditDefaultsOnly, Category = Effects)
-	//TSubclassOf<AShooterImpactEffect> ImpactTemplate;
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	TSubclassOf<class AParagonImpactEffect> ImpactTemplate;
 
 	/** smoke trail */
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
@@ -75,6 +75,14 @@ struct FInstantWeaponData
 	/** param name for beam target in smoke trail */
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
 	FName TrailTargetParam;
+
+	/** FX for muzzle flash */
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	UParticleSystem* MuzzleFX;
+
+	/** name of bone/socket for muzzle in weapon mesh */
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	FName MuzzleAttachPoint;
 
 	/** defaults */
 	FInstantWeaponData()
@@ -88,8 +96,11 @@ struct FInstantWeaponData
 		DamageType = UDamageType::StaticClass();
 		ClientSideHitLeeway = 200.0f;
 		AllowedViewDotHitDir = 0.8f;
+		ImpactTemplate = nullptr;
 		TrailFX = nullptr;
 		TrailTargetParam = "";
+		MuzzleFX = nullptr;
+		MuzzleAttachPoint = "";
 	}
 };
 
@@ -123,9 +134,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	FInstantWeaponData HitScanConfig;
 
-	///** instant hit notify for replication */
-	//UPROPERTY(Transient, ReplicatedUsing = OnRep_HitNotify)
-	//FInstantHitInfo HitNotify;
+	/** instant hit notify for replication */
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_HitNotify)
+	FInstantHitInfo HitNotify;
 
 	/** current spread from continuous firing */
 	float CurrentFiringSpread;
@@ -151,26 +162,26 @@ protected:
 	/** continue processing the instant hit, as if it has been confirmed by the server */
 	void ProcessInstantHit_Confirmed(const FHitResult& Impact, const FVector& Origin, const FVector& ShootDir, int32 RandomSeed, float ReticleSpread);
 
-	///** check if weapon should deal damage to actor */
-	//bool ShouldDealDamage(AActor* TestActor) const;
+	/** check if weapon should deal damage to actor */
+	bool ShouldDealDamage(AActor* TestActor) const;
 
-	///** handle damage */
-	//void DealDamage(const FHitResult& Impact, const FVector& ShootDir);
+	/** handle damage */
+	void DealDamage(const FHitResult& Impact, const FVector& ShootDir);
 
-	///** [local + server] update spread on firing */
-	//virtual void OnBurstFinished() override;
+	/** [local + server] update spread on firing */
+	virtual void OnBurstFinished() override;
 	
 	//////////////////////////////////////////////////////////////////////////
 	// Effects replication
 
-	//UFUNCTION()
-	//void OnRep_HitNotify();
+	UFUNCTION()
+	void OnRep_HitNotify();
 
-	///** called in network play to do the cosmetic fx  */
-	//void SimulateInstantHit(const FVector& Origin, int32 RandomSeed, float ReticleSpread);
+	/** called in network play to do the cosmetic fx  */
+	void SimulateInstantHit(const FVector& Origin, int32 RandomSeed, float ReticleSpread);
 
-	///** spawn effects for impact */
-	//void SpawnImpactEffects(const FHitResult& Impact);
+	/** spawn effects for impact */
+	void SpawnImpactEffects(const FHitResult& Impact);
 
 	/** spawn trail effect */
 	void SpawnTrailEffect(const FVector& EndPoint);

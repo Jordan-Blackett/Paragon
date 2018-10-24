@@ -2,15 +2,38 @@
 
 #include "ParagonBasicAttack.h"
 #include "Paragon.h"
+#include "Net/UnrealNetwork.h"
 #include "ParagonCharacter.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
+
+bool AParagonBasicAttack::HasInfiniteAmmo() const
+{
+	//const AShooterPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AShooterPlayerController>(MyPawn->Controller) : NULL;
+	return WeaponConfig.bInfiniteAmmo; //|| (MyPC && MyPC->HasInfiniteAmmo());
+}
+
+bool AParagonBasicAttack::HasInfiniteClip() const
+{
+	//const AShooterPlayerController* MyPC = (MyPawn != NULL) ? Cast<const AShooterPlayerController>(MyPawn->Controller) : NULL;
+	return WeaponConfig.bInfiniteClip;// || (MyPC && MyPC->HasInfiniteClip());
+}
 
 // Sets default values
 AParagonBasicAttack::AParagonBasicAttack()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	//PrimaryActorTick.bCanEverTick = true;
+
+	WeaponConfig.WeaponEffects.bLoopedMuzzleFX = false;
+	//bLoopedFireAnim = false;
+	bPlayingFireAnim = false;
+	bWantsToFire = false;
+	bPendingReload = false;
+	bPendingEquip = false;
+	CurrentState = EWeaponState::Idle;
 
 	CurrentAmmo = 0;
 	CurrentAmmoInClip = 0;
@@ -22,8 +45,6 @@ AParagonBasicAttack::AParagonBasicAttack()
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
 	bNetUseOwnerRelevancy = true;
-
-	//Instigator = GetOwner();
 }
 
 void AParagonBasicAttack::InitBasicAttack(AParagonCharacter* NewOwner)
@@ -42,30 +63,30 @@ void AParagonBasicAttack::InitBasicAttack(AParagonCharacter* NewOwner)
 
 void AParagonBasicAttack::StartFire()
 {
-	//if (Role < ROLE_Authority)
-	//{
-	//	Server_StartFire();
-	//}
+	if (Role < ROLE_Authority)
+	{
+		Server_StartFire();
+	}
 
-	//if (!bWantsToFire)
-	//{
-	//	bWantsToFire = true;
-	//	DetermineWeaponState();
-	//}
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		DetermineWeaponState();
+	}
 }
 
 void AParagonBasicAttack::StopFire()
 {
-	//if (Role < ROLE_Authority)
-	//{
-	//	Server_StopFire();
-	//}
+	if (Role < ROLE_Authority)
+	{
+		Server_StopFire();
+	}
 
-	//if (bWantsToFire)
-	//{
-	//	bWantsToFire = false;
-	//	DetermineWeaponState();
-	//}
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		DetermineWeaponState();
+	}
 }
 
 void AParagonBasicAttack::StartReload(bool bFromReplication)
@@ -111,7 +132,7 @@ void AParagonBasicAttack::StopReload()
 
 void AParagonBasicAttack::Server_StartFire_Implementation()
 {
-	//StartFire();
+	StartFire();
 }
 
 bool AParagonBasicAttack::Server_StartFire_Validate()
@@ -121,7 +142,7 @@ bool AParagonBasicAttack::Server_StartFire_Validate()
 
 void AParagonBasicAttack::Server_StopFire_Implementation()
 {
-	//StopFire();
+	StopFire();
 }
 
 bool AParagonBasicAttack::Server_StopFire_Validate()
@@ -159,14 +180,14 @@ void AParagonBasicAttack::Client_StartReload_Implementation()
 
 void AParagonBasicAttack::OnRep_BurstCounter()
 {
-	//if (BurstCounter > 0)
-	//{
-	//	SimulateWeaponFire();
-	//}
-	//else
-	//{
-	//	StopSimulatingWeaponFire();
-	//}
+	if (BurstCounter > 0)
+	{
+		SimulateWeaponFire();
+	}
+	else
+	{
+		StopSimulatingWeaponFire();
+	}
 }
 
 void AParagonBasicAttack::OnRep_Reload()
@@ -188,38 +209,23 @@ void AParagonBasicAttack::SimulateWeaponFire()
 	//	return;
 	//}
 
-	//if (MuzzleFX)
-	//{
-	//	USkeletalMeshComponent* UseWeaponMesh = GetWeaponMesh();
-	//	if (!bLoopedMuzzleFX || MuzzlePSC == NULL)
-	//	{
-	//		// Split screen requires we create 2 effects. One that we see and one that the other player sees.
-	//		if ((MyPawn != NULL) && (MyPawn->IsLocallyControlled() == true))
-	//		{
-	//			AController* PlayerCon = MyPawn->GetController();
-	//			if (PlayerCon != NULL)
-	//			{
-	//				Mesh1P->GetSocketLocation(MuzzleAttachPoint);
-	//				MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh1P, MuzzleAttachPoint);
-	//				MuzzlePSC->bOwnerNoSee = false;
-	//				MuzzlePSC->bOnlyOwnerSee = true;
+	UE_LOG(LogTemp, Warning, TEXT("MUZZLE2"));
 
-	//				Mesh3P->GetSocketLocation(MuzzleAttachPoint);
-	//				MuzzlePSCSecondary = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, Mesh3P, MuzzleAttachPoint);
-	//				MuzzlePSCSecondary->bOwnerNoSee = true;
-	//				MuzzlePSCSecondary->bOnlyOwnerSee = false;
-	//			}
-	//		}
-	//		else
-	//		{
-	//			MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(MuzzleFX, UseWeaponMesh, MuzzleAttachPoint);
-	//		}
-	//	}
-	//}
+	if (WeaponConfig.WeaponEffects.MuzzleFX)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MUZZLE3"));
+		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(MyPawn);
+		USkeletalMeshComponent* UseWeaponMesh = PlayerCharacter->GetMesh();
+		if (!WeaponConfig.WeaponEffects.bLoopedMuzzleFX || MuzzlePSC == NULL)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("MUZZLE"));
+			MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.WeaponEffects.MuzzleFX, UseWeaponMesh, WeaponConfig.FirePointAttachPoint);
+		}
+	}
 
 	//if (!bLoopedFireAnim || !bPlayingFireAnim)
 	//{
-	//	PlayWeaponAnimation(FireAnim);
+	//	//PlayWeaponAnimation(FireAnim);
 	//	bPlayingFireAnim = true;
 	//}
 
@@ -251,19 +257,14 @@ void AParagonBasicAttack::SimulateWeaponFire()
 
 void AParagonBasicAttack::StopSimulatingWeaponFire()
 {
-	//if (bLoopedMuzzleFX)
-	//{
-	//	if (MuzzlePSC != NULL)
-	//	{
-	//		MuzzlePSC->DeactivateSystem();
-	//		MuzzlePSC = NULL;
-	//	}
-	//	if (MuzzlePSCSecondary != NULL)
-	//	{
-	//		MuzzlePSCSecondary->DeactivateSystem();
-	//		MuzzlePSCSecondary = NULL;
-	//	}
-	//}
+	if (WeaponConfig.WeaponEffects.bLoopedMuzzleFX)
+	{
+		if (MuzzlePSC != NULL)
+		{
+			MuzzlePSC->DeactivateSystem();
+			MuzzlePSC = NULL;
+		}
+	}
 
 	//if (bLoopedFireAnim && bPlayingFireAnim)
 	//{
@@ -284,13 +285,13 @@ void AParagonBasicAttack::GetLifetimeReplicatedProps(TArray< FLifetimeProperty >
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(AShooterWeapon, MyPawn);
+	DOREPLIFETIME(AParagonBasicAttack, MyPawn);
 
-	//DOREPLIFETIME_CONDITION(AShooterWeapon, CurrentAmmo, COND_OwnerOnly);
-	//DOREPLIFETIME_CONDITION(AShooterWeapon, CurrentAmmoInClip, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AParagonBasicAttack, CurrentAmmo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AParagonBasicAttack, CurrentAmmoInClip, COND_OwnerOnly);
 
-	//DOREPLIFETIME_CONDITION(AShooterWeapon, BurstCounter, COND_SkipOwner);
-	//DOREPLIFETIME_CONDITION(AShooterWeapon, bPendingReload, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(AParagonBasicAttack, BurstCounter, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(AParagonBasicAttack, bPendingReload, COND_SkipOwner);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -373,23 +374,23 @@ void AParagonBasicAttack::UseAmmo()
 
 void AParagonBasicAttack::HandleFiring()
 {
-	//if ((CurrentAmmoInClip > 0 || HasInfiniteClip() || HasInfiniteAmmo()) && CanFire())
-	//{
-	//	if (GetNetMode() != NM_DedicatedServer)
-	//	{
-	//		SimulateWeaponFire();
-	//	}
+	if ((CurrentAmmoInClip > 0 || HasInfiniteClip() || HasInfiniteAmmo()) && CanFire())
+	{
+		if (GetNetMode() != NM_DedicatedServer)
+		{
+			SimulateWeaponFire();
+		}
 
-	//	if (MyPawn && MyPawn->IsLocallyControlled())
-	//	{
-	//		FireWeapon();
+		if (MyPawn && MyPawn->IsLocallyControlled())
+		{
+			FireWeapon();
 
-	//		UseAmmo();
+			UseAmmo();
 
-	//		// update firing FX on remote clients if function was called on server
-	//		BurstCounter++;
-	//	}
-	//}
+			// update firing FX on remote clients if function was called on server
+			BurstCounter++;
+		}
+	}
 	//else if (CanReload())
 	//{
 	//	StartReload();
@@ -414,45 +415,45 @@ void AParagonBasicAttack::HandleFiring()
 	//	}
 	//}
 
-	//if (MyPawn && MyPawn->IsLocallyControlled())
-	//{
-	//	// local client will notify server
-	//	if (Role < ROLE_Authority)
-	//	{
-	//		ServerHandleFiring();
-	//	}
+	if (MyPawn && MyPawn->IsLocallyControlled())
+	{
+		// local client will notify server
+		if (Role < ROLE_Authority)
+		{
+			Server_HandleFiring();
+		}
 
-	//	// reload after firing last round
-	////	if (CurrentAmmoInClip <= 0 && CanReload())
-	////	{
-	////		StartReload();
-	////	}
+		// reload after firing last round
+		if (CurrentAmmoInClip <= 0 && CanReload())
+		{
+			StartReload();
+		}
 
-	////	// setup refire timer
-	////	bRefiring = (CurrentState == EWeaponState::Firing && WeaponConfig.TimeBetweenShots > 0.0f);
-	////	if (bRefiring)
-	////	{
-	////		GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &AShooterWeapon::HandleFiring, WeaponConfig.TimeBetweenShots, false);
-	////	}
-	////}
+		// setup refire timer
+		bRefiring = (CurrentState == EWeaponState::Firing && WeaponConfig.TimeBetweenShots > 0.0f);
+		if (bRefiring)
+		{
+			GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &AParagonBasicAttack::HandleFiring, WeaponConfig.TimeBetweenShots, false);
+		}
+	}
 
-	////LastFireTime = GetWorld()->GetTimeSeconds();
+	LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
 void AParagonBasicAttack::Server_HandleFiring_Implementation()
 {
-	//const bool bShouldUpdateAmmo = (CurrentAmmoInClip > 0 && CanFire());
+	const bool bShouldUpdateAmmo = (CurrentAmmoInClip > 0 && CanFire());
 
-	//HandleFiring();
+	HandleFiring();
 
-	//if (bShouldUpdateAmmo)
-	//{
-	//	// update ammo
-	//	UseAmmo();
+	if (bShouldUpdateAmmo)
+	{
+		// update ammo
+		UseAmmo();
 
-	//	// update firing FX on remote clients
-	//	BurstCounter++;
-	//}
+		// update firing FX on remote clients
+		BurstCounter++;
+	}
 }
 
 bool AParagonBasicAttack::Server_HandleFiring_Validate()
@@ -480,81 +481,74 @@ void AParagonBasicAttack::ReloadWeapon()
 	//}
 }
 
-//void AParagonBasicAttack::SetWeaponState(EWeaponState::Type NewState)
-//{
-//	//const EWeaponState::Type PrevState = CurrentState;
-//
-//	//if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
-//	//{
-//	//	OnBurstFinished();
-//	//}
-//
-//	//CurrentState = NewState;
-//
-//	//if (PrevState != EWeaponState::Firing && NewState == EWeaponState::Firing)
-//	//{
-//	//	OnBurstStarted();
-//	//}
-//}
+void AParagonBasicAttack::SetWeaponState(EWeaponState::Type NewState)
+{
+	const EWeaponState::Type PrevState = CurrentState;
+
+	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
+	{
+		OnBurstFinished();
+	}
+
+	CurrentState = NewState;
+
+	if (PrevState != EWeaponState::Firing && NewState == EWeaponState::Firing)
+	{
+		OnBurstStarted();
+	}
+}
 
 void AParagonBasicAttack::DetermineWeaponState()
 {
-	//EWeaponState::Type NewState = EWeaponState::Idle;
+	EWeaponState::Type NewState = EWeaponState::Idle;
 
-	//if (bIsEquipped)
-	//{
-	//	if (bPendingReload)
-	//	{
-	//		if (CanReload() == false)
-	//		{
-	//			NewState = CurrentState;
-	//		}
-	//		else
-	//		{
-	//			NewState = EWeaponState::Reloading;
-	//		}
-	//	}
-	//	else if ((bPendingReload == false) && (bWantsToFire == true) && (CanFire() == true))
-	//	{
-	//		NewState = EWeaponState::Firing;
-	//	}
-	//}
-	//else if (bPendingEquip)
-	//{
-	//	NewState = EWeaponState::Equipping;
-	//}
+	if (bPendingReload)
+	{
+		if (CanReload() == false)
+		{
+			NewState = CurrentState;
+		}
+		else
+		{
+			NewState = EWeaponState::Reloading;
+		}
+	}
+	else if ((bPendingReload == false) && (bWantsToFire == true) && (CanFire() == true))
+	{
+		NewState = EWeaponState::Firing;
+	}
 
-	//SetWeaponState(NewState);
+	SetWeaponState(NewState);
 }
 
 void AParagonBasicAttack::OnBurstStarted()
 {
-	//// start firing, can be delayed to satisfy TimeBetweenShots
-	//const float GameTime = GetWorld()->GetTimeSeconds();
-	//if (LastFireTime > 0 && WeaponConfig.TimeBetweenShots > 0.0f &&
-	//	LastFireTime + WeaponConfig.TimeBetweenShots > GameTime)
-	//{
-	//	GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &AShooterWeapon::HandleFiring, LastFireTime + WeaponConfig.TimeBetweenShots - GameTime, false);
-	//}
-	//else
-	//{
-	//	HandleFiring();
-	//}
+	// start firing, can be delayed to satisfy TimeBetweenShots
+	const float GameTime = GetWorld()->GetTimeSeconds();
+	if (LastFireTime > 0 && WeaponConfig.TimeBetweenShots > 0.0f &&
+		LastFireTime + WeaponConfig.TimeBetweenShots > GameTime)
+	{
+		GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &AParagonBasicAttack::HandleFiring, LastFireTime + WeaponConfig.TimeBetweenShots - GameTime, false);
+	}
+	else
+	{
+		HandleFiring();
+	}
 }
 
 void AParagonBasicAttack::OnBurstFinished()
 {
-	//// stop firing FX on remote clients
-	//BurstCounter = 0;
+	// stop firing FX on remote clients
+	BurstCounter = 0;
 
-	//// stop firing FX locally, unless it's a dedicated server
-	//if (GetNetMode() != NM_DedicatedServer)
-	//{
-	//	StopSimulatingWeaponFire();
-	//}
+	// stop firing FX locally, unless it's a dedicated server
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		StopSimulatingWeaponFire();
+	}
 
-	//GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
-	//bRefiring = false;
+	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
+	bRefiring = false;
 }
 
 
