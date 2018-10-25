@@ -19,10 +19,13 @@ class PARAGON_API AParagonCharacter_LtBelica : public AParagonCharacter
 public:
 	AParagonCharacter_LtBelica();
 
+	/** perform initial setup */
+	virtual void PostInitializeComponents() override;
+
 	// --- Abilities ---
 
 	// Ability Basic Attack - Plasma Blast
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	AParagonBasicAttack_HitScan* BasicAttack;
 
 	// Basic Attack Config
@@ -52,5 +55,14 @@ private:
 	void StopWeaponFire();
 
 	bool bWantsToFire = false;
+
+	void ApplyWeaponConfig(FWeaponData& WeaponDataOut, FInstantWeaponData& HitscanDataOut);
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
+	float DummyHealth;
+
+	/** Called when the Health variable gets updated */
+	UFUNCTION()
+	void OnRep_Health();
 	
 };

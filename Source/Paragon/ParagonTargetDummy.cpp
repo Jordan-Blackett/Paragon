@@ -27,17 +27,10 @@ void AParagonTargetDummy::BeginPlay()
 
 }
 
-// Called every frame
-void AParagonTargetDummy::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
 void AParagonTargetDummy::UpdateCharText()
 {
 	//Create a string that will display the health and bomb count values
-	FString NewText = FString("Health: ") + FString::SanitizeFloat(GetCurrentHealth());
+	FString NewText = FString("Health: ") + FString::SanitizeFloat(DummyHealth);//(GetCurrentHealth());
 
 	//Set the created string to the text render comp
 	CharText->SetText(FText::FromString(NewText));
@@ -55,6 +48,7 @@ float AParagonTargetDummy::TakeDamage(float Damage, struct FDamageEvent const& D
 	}
 
 	int health = GetCurrentHealth();
+	DummyHealth = GetCurrentHealth();
 
 	return health;
 }
@@ -65,7 +59,7 @@ void AParagonTargetDummy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME(AParagonTargetDummy, CurrentHealth);
+	DOREPLIFETIME(AParagonTargetDummy, DummyHealth);
 }
 
 void AParagonTargetDummy::OnRep_Health()

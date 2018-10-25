@@ -7,6 +7,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimMontage.h"
+#include "Components/AudioComponent.h"
+#include "Engine.h"
 
 
 bool AParagonBasicAttack::HasInfiniteAmmo() const
@@ -24,11 +27,11 @@ bool AParagonBasicAttack::HasInfiniteClip() const
 // Sets default values
 AParagonBasicAttack::AParagonBasicAttack()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	//PrimaryActorTick.bCanEverTick = true;
 
 	WeaponConfig.WeaponEffects.bLoopedMuzzleFX = false;
-	//bLoopedFireAnim = false;
+	WeaponConfig.WeaponAnimations.bLoopedFireAnim = false;
 	bPlayingFireAnim = false;
 	bWantsToFire = false;
 	bPendingReload = false;
@@ -45,6 +48,11 @@ AParagonBasicAttack::AParagonBasicAttack()
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
 	bNetUseOwnerRelevancy = true;
+
+	//if (MyPawn)
+	//{
+	//	MyPawn->ApplyWeaponConfig(WeaponConfig);
+	//}
 }
 
 void AParagonBasicAttack::InitBasicAttack(AParagonCharacter* NewOwner)
@@ -77,15 +85,18 @@ void AParagonBasicAttack::StartFire()
 
 void AParagonBasicAttack::StopFire()
 {
-	if (Role < ROLE_Authority)
+	if (!WeaponConfig.bBurstFire || (WeaponConfig.bBurstFire && BurstCounter >= WeaponConfig.BurstShots))
 	{
-		Server_StopFire();
-	}
+		if (Role < ROLE_Authority)
+		{
+			Server_StopFire();
+		}
 
-	if (bWantsToFire)
-	{
-		bWantsToFire = false;
-		DetermineWeaponState();
+		if (bWantsToFire)
+		{
+			bWantsToFire = false;
+			DetermineWeaponState();
+		}
 	}
 }
 
@@ -180,6 +191,7 @@ void AParagonBasicAttack::Client_StartReload_Implementation()
 
 void AParagonBasicAttack::OnRep_BurstCounter()
 {
+	UE_LOG(LogTemp, Warning, TEXT("BurstCounter"));
 	if (BurstCounter > 0)
 	{
 		SimulateWeaponFire();
@@ -188,6 +200,11 @@ void AParagonBasicAttack::OnRep_BurstCounter()
 	{
 		StopSimulatingWeaponFire();
 	}
+}
+
+void AParagonBasicAttack::OnRep_test()
+{
+	//UE_LOG(LogTemp, Warning, TEXT("soundstart"));
 }
 
 void AParagonBasicAttack::OnRep_Reload()
@@ -204,42 +221,46 @@ void AParagonBasicAttack::OnRep_Reload()
 
 void AParagonBasicAttack::SimulateWeaponFire()
 {
-	//if (Role == ROLE_Authority && CurrentState != EWeaponState::Firing)
-	//{
-	//	return;
-	//}
+	if (Role == ROLE_Authority && CurrentState != EWeaponState::Firing)
+	{
+		return;
+	}
 
-	UE_LOG(LogTemp, Warning, TEXT("MUZZLE2"));
-
+	UE_LOG(LogTemp, Warning, TEXT("Test4"));
 	if (WeaponConfig.WeaponEffects.MuzzleFX)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MUZZLE3"));
-		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(MyPawn);
+		UE_LOG(LogTemp, Warning, TEXT("Test3"));
+		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(GetOwner());
 		USkeletalMeshComponent* UseWeaponMesh = PlayerCharacter->GetMesh();
-		if (!WeaponConfig.WeaponEffects.bLoopedMuzzleFX || MuzzlePSC == NULL)
+		if (!WeaponConfig.WeaponEffects.bLoopedMuzzleFX || MuzzlePSC == nullptr)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("MUZZLE"));
-			MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.WeaponEffects.MuzzleFX, UseWeaponMesh, WeaponConfig.FirePointAttachPoint);
+			if (UseWeaponMesh != nullptr) {
+				if (WeaponConfig.FirePointAttachPoint != "")
+				{
+					MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.WeaponEffects.MuzzleFX, UseWeaponMesh, WeaponConfig.FirePointAttachPoint);
+				}
+			}
 		}
 	}
 
-	//if (!bLoopedFireAnim || !bPlayingFireAnim)
-	//{
-	//	//PlayWeaponAnimation(FireAnim);
-	//	bPlayingFireAnim = true;
-	//}
+	if (!WeaponConfig.WeaponAnimations.bLoopedFireAnim || !bPlayingFireAnim)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ANIM"));
+		PlayWeaponAnimation(WeaponConfig.WeaponAnimations.FireAnim);
+		bPlayingFireAnim = true;
+	}
 
-	//if (bLoopedFireSound)
-	//{
-	//	if (FireAC == NULL)
-	//	{
-	//		FireAC = PlayWeaponSound(FireLoopSound);
-	//	}
-	//}
-	//else
-	//{
-	//	PlayWeaponSound(FireSound);
-	//}
+	if (WeaponConfig.WeaponSounds.bLoopedFireSound)
+	{
+		if (FireAC == NULL)
+		{
+			FireAC = PlayWeaponSound(WeaponConfig.WeaponSounds.FireLoopSound);
+		}
+	}
+	else
+	{
+		PlayWeaponSound(WeaponConfig.WeaponSounds.FireSound);
+	}
 
 	//AShooterPlayerController* PC = (MyPawn != NULL) ? Cast<AShooterPlayerController>(MyPawn->Controller) : NULL;
 	//if (PC != NULL && PC->IsLocalController())
@@ -266,26 +287,29 @@ void AParagonBasicAttack::StopSimulatingWeaponFire()
 		}
 	}
 
-	//if (bLoopedFireAnim && bPlayingFireAnim)
-	//{
-	//	StopWeaponAnimation(FireAnim);
-	//	bPlayingFireAnim = false;
-	//}
+	if (WeaponConfig.WeaponAnimations.bLoopedFireAnim && bPlayingFireAnim)
+	{
+		StopWeaponAnimation(WeaponConfig.WeaponAnimations.FireAnim);
+		bPlayingFireAnim = false;
+	}
 
-	//if (FireAC)
-	//{
-	//	FireAC->FadeOut(0.1f, 0.0f);
-	//	FireAC = NULL;
+	if (FireAC)
+	{
+		FireAC->FadeOut(0.1f, 0.0f);
+		FireAC = NULL;
 
-	//	PlayWeaponSound(FireFinishSound);
-	//}
+		PlayWeaponSound(WeaponConfig.WeaponSounds.FireFinishSound);
+	}
 }
 
-void AParagonBasicAttack::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+void AParagonBasicAttack::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AParagonBasicAttack, MyPawn);
+	UE_LOG(LogTemp, Warning, TEXT("GetLifetimeReplicatedPropsBA"));
+
+	DOREPLIFETIME(AParagonBasicAttack, test);
+	DOREPLIFETIME(AParagonBasicAttack, WeaponConfig);
 
 	DOREPLIFETIME_CONDITION(AParagonBasicAttack, CurrentAmmo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AParagonBasicAttack, CurrentAmmoInClip, COND_OwnerOnly);
@@ -340,7 +364,7 @@ void AParagonBasicAttack::GiveAmmo(int AddAmount)
 
 void AParagonBasicAttack::UseAmmo()
 {
-	/*if (!HasInfiniteAmmo())
+	if (!HasInfiniteAmmo())
 	{
 		CurrentAmmoInClip--;
 	}
@@ -350,7 +374,9 @@ void AParagonBasicAttack::UseAmmo()
 		CurrentAmmo--;
 	}
 
-	AShooterAIController* BotAI = MyPawn ? Cast<AShooterAIController>(MyPawn->GetController()) : NULL;
+	CurrentAmmo--;
+
+	/*AShooterAIController* BotAI = MyPawn ? Cast<AShooterAIController>(MyPawn->GetController()) : NULL;
 	AShooterPlayerController* PlayerController = MyPawn ? Cast<AShooterPlayerController>(MyPawn->GetController()) : NULL;
 	if (BotAI)
 	{
@@ -429,9 +455,16 @@ void AParagonBasicAttack::HandleFiring()
 			StartReload();
 		}
 
+		bool burstFire = false;
+		if (WeaponConfig.bBurstFire && BurstCounter >= WeaponConfig.BurstShots)
+		{
+			burstFire = true;
+			StopFire();
+		}
+
 		// setup refire timer
 		bRefiring = (CurrentState == EWeaponState::Firing && WeaponConfig.TimeBetweenShots > 0.0f);
-		if (bRefiring)
+		if (bRefiring && !burstFire)
 		{
 			GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &AParagonBasicAttack::HandleFiring, WeaponConfig.TimeBetweenShots, false);
 		}
@@ -665,4 +698,40 @@ FHitResult AParagonBasicAttack::WeaponTrace(const FVector& StartTrace, const FVe
 	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
 
 	return Hit;
+}
+
+UAudioComponent * AParagonBasicAttack::PlayWeaponSound(USoundCue * Sound)
+{
+	UAudioComponent* AC = NULL;
+	if (Sound && MyPawn)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("soundstart"));
+		//AC = UGameplayStatics::SpawnSoundAttached(Sound, MyPawn->GetRootComponent(), NAME_None, FVector(0, 0, 0));
+	}
+
+	return AC;
+}
+
+float AParagonBasicAttack::PlayWeaponAnimation(UAnimMontage* Animation)
+{
+	float Duration = 0.0f;
+	if (MyPawn)
+	{
+		Duration = MyPawn->PlayAnimMontage(Animation);
+	}
+	else if(GetOwner())
+	{
+		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(GetOwner());
+		Duration = PlayerCharacter->PlayAnimMontage(Animation);
+	}
+
+	return Duration;
+}
+
+void AParagonBasicAttack::StopWeaponAnimation(UAnimMontage* Animation)
+{
+	if (MyPawn)
+	{
+		MyPawn->StopAnimMontage(Animation);
+	}
 }

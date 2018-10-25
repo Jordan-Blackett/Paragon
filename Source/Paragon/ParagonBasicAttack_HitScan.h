@@ -18,6 +18,9 @@ struct FInstantHitInfo
 	FVector Origin;
 
 	UPROPERTY()
+	FVector Hitpoint;
+
+	UPROPERTY()
 	float ReticleSpread;
 
 	UPROPERTY()
@@ -122,6 +125,12 @@ public:
 
 	/** [local] weapon specific fire implementation */
 	virtual void FireWeapon() override;
+
+	///** Marks the properties we wish to replicate */
+	//virtual void GetL ifeti meRepl icated Props(TArray<FLife timeProperty>&  tLifetimeProps) const override;
+
+	UPROPERTY(Replicated)
+	FInstantWeaponData HitScanConfig;
 	
 protected:
 
@@ -131,8 +140,8 @@ protected:
 	}
 
 	/** weapon config */
-	UPROPERTY(EditDefaultsOnly, Category = Config)
-	FInstantWeaponData HitScanConfig;
+	//UPROPERTY(EditDefaultsOnly, Category = Config)
+	//FInstantWeaponData HitScanConfig;
 
 	/** instant hit notify for replication */
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_HitNotify)
@@ -150,11 +159,11 @@ protected:
 	void Server_NotifyHit_Implementation(const FHitResult& Impact, FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
 	bool Server_NotifyHit_Validate(const FHitResult& Impact, FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
 
-	///** server notified of miss to show trail FX */
-	//UFUNCTION(unreliable, server, WithValidation)
-	//void Server_NotifyMiss(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
-	//void Server_NotifyMiss_Implementation(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
-	//bool Server_NotifyMiss_Validate(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
+	/** server notified of miss to show trail FX */
+	UFUNCTION(unreliable, server, WithValidation)
+	void Server_NotifyMiss(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
+	void Server_NotifyMiss_Implementation(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
+	bool Server_NotifyMiss_Validate(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread);
 
 	/** process the instant hit and notify the server if necessary */
 	void ProcessHitScanHit(const FHitResult& Impact, const FVector& Origin, const FVector& ShootDir, int32 RandomSeed, float ReticleSpread);
@@ -178,11 +187,12 @@ protected:
 	void OnRep_HitNotify();
 
 	/** called in network play to do the cosmetic fx  */
-	void SimulateInstantHit(const FVector& Origin, int32 RandomSeed, float ReticleSpread);
+	void SimulateInstantHit(const FVector& Origin, const FVector& HitPoint, int32 RandomSeed, float ReticleSpread);
 
 	/** spawn effects for impact */
 	void SpawnImpactEffects(const FHitResult& Impact);
 
 	/** spawn trail effect */
 	void SpawnTrailEffect(const FVector& EndPoint);
+	//void GetLi fetimeRe plicated Props(TArray<FLifetimeProperty>& OutLifetimeProps) const;
 };

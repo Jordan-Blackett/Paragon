@@ -2,9 +2,17 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Info.h"
+#include "CoreMinimal.h" //"CoreMinimal.h"
+#include "GameFramework/Actor.h"
 #include "ParagonBasicAttack.generated.h"
+
+class UAnimMontage;
+class AShooterCharacter;
+class UAudioComponent;
+class UParticleSystemComponent;
+class UCameraShake;
+class UForceFeedbackEffect;
+class USoundCue;
 
 namespace EWeaponState
 {
@@ -49,17 +57,17 @@ struct FWeaponSoundsData
 {
 	GENERATED_USTRUCT_BODY()
 
-	///** single fire sound (bLoopedFireSound not set) */
-	//UPROPERTY(EditDefaultsOnly, Category = Sound)
-	//USoundCue* FireSound;
+	/** single fire sound (bLoopedFireSound not set) */
+	UPROPERTY(EditDefaultsOnly, Category = Sound)
+	USoundCue* FireSound;
 
-	///** looped fire sound (bLoopedFireSound set) */
-	//UPROPERTY(EditDefaultsOnly, Category = Sound)
-	//USoundCue* FireLoopSound;
+	/** looped fire sound (bLoopedFireSound set) */
+	UPROPERTY(EditDefaultsOnly, Category = Sound)
+	USoundCue* FireLoopSound;
 
-	///** finished burst sound (bLoopedFireSound set) */
-	//UPROPERTY(EditDefaultsOnly, Category = Sound)
-	//USoundCue* FireFinishSound;
+	/** finished burst sound (bLoopedFireSound set) */
+	UPROPERTY(EditDefaultsOnly, Category = Sound)
+	USoundCue* FireFinishSound;
 
 	///** out of ammo sound */
 	//UPROPERTY(EditDefaultsOnly, Category = Sound)
@@ -75,9 +83,9 @@ struct FWeaponSoundsData
 
 	FWeaponSoundsData()
 	{
-		//FireSound = nullptr;
-		//FireLoopSound = nullptr;
-		//FireFinishSound = nullptr;
+		FireSound = nullptr;
+		FireLoopSound = nullptr;
+		FireFinishSound = nullptr;
 		//OutOfAmmoSound = nullptr;
 		//ReloadSound = nullptr;
 		bLoopedFireSound = 1;
@@ -89,9 +97,9 @@ struct FWeaponAnimationData
 {
 	GENERATED_USTRUCT_BODY()
 
-	///** fire animations */
-	//UPROPERTY(EditDefaultsOnly, Category = Animation)
-	//FWeaponAnim FireAnim;
+	/** fire animations */
+	UPROPERTY(EditDefaultsOnly, Category = Animation)
+	UAnimMontage* FireAnim;
 
 	/** is fire animation looped? */
 	UPROPERTY(EditDefaultsOnly, Category = Animation)
@@ -99,6 +107,7 @@ struct FWeaponAnimationData
 
 	FWeaponAnimationData()
 	{
+		FireAnim = nullptr;
 		bLoopedFireAnim = 1;
 	}
 };
@@ -132,13 +141,17 @@ struct FWeaponData
 	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
 	float TimeBetweenShots;
 
+	/** is burst fire */
+	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
+	uint32 bBurstFire : 1;
+
+	/** number of shots in burst */
+	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
+	int32 BurstShots;
+
 	/** name of bone/socket for muzzle in weapon mesh */
 	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
 	FName FirePointAttachPoint;
-
-	/** firing audio (bLoopedFireSound set) */
-	//UPROPERTY(Transient)
-	//	UAudioComponent* FireAC;
 
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
 	FWeaponEffectsData WeaponEffects;
@@ -158,6 +171,7 @@ struct FWeaponData
 		AmmoPerClip = 20;
 		InitialClips = 4;
 		TimeBetweenShots = 0.2f;
+		bBurstFire = 0;
 		FirePointAttachPoint = "";
 	}
 };
@@ -166,7 +180,7 @@ class AParagonCharacter;
 class UParticleSystemComponent;
 
 UCLASS()
-class PARAGON_API AParagonBasicAttack : public AInfo
+class PARAGON_API AParagonBasicAttack : public AActor //AInfo
 {
 	GENERATED_BODY()
 
@@ -311,6 +325,9 @@ public:
 	///** set the weapon's owning pawn */
 	//void SetOwningPawn(AShooterCharacter* AShooterCharacter);
 
+	/** Marks the properties we wish to replicate */
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const;
+
 public:	
 	// Sets default values for this actor's properties
 	AParagonBasicAttack();
@@ -318,9 +335,9 @@ public:
 	void InitBasicAttack(AParagonCharacter* NewOwner);
 
 protected:
-	/** weapon data */
-	UPROPERTY(EditDefaultsOnly, Category = Config)
-	FWeaponData WeaponConfig;
+	///** weapon data */
+	//UPROPERTY()
+	//FWeaponData WeaponConfig;
 
 	UPROPERTY()
 	class AParagonCharacter* MyPawn = nullptr;
@@ -339,6 +356,25 @@ private:
 
 	//UPROPERTY()
 	//UWorld* SceneWorld = nullptr;
+
+public:
+
+	/** burst counter, used for replicating fire events to remote clients */
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
+	int32 BurstCounter;
+
+	UPROPERTY(ReplicatedUsing = OnRep_test)
+	int32 test;
+
+	UFUNCTION()
+	void OnRep_BurstCounter();
+
+	UFUNCTION()
+	void OnRep_test();
+
+	///** weapon data */
+	UPROPERTY(Replicated)
+	FWeaponData WeaponConfig;
 
 protected:
 
@@ -368,8 +404,8 @@ protected:
 	//////////////////////////////////////////////////////////////////////////
 	// Replication & effects
 
-	UFUNCTION()
-	void OnRep_BurstCounter();
+	//UFUNCTION()
+	//void OnRep_BurstCounter();
 
 	UFUNCTION()
 	void OnRep_Reload();
@@ -428,11 +464,22 @@ protected:
 	/** find hit */
 	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
 
+	/** play weapon sounds */
+	UAudioComponent* PlayWeaponSound(USoundCue* Sound);
+
+	/** play weapon animations */
+	float PlayWeaponAnimation(UAnimMontage* Animation);
+
+	/** stop playing weapon animations */
+	void StopWeaponAnimation(UAnimMontage* Animation);
+
 	//////////////////////////////////////////////////////////////////////////
 	//
 
 	/** spawned component for muzzle FX */
 	UParticleSystemComponent* MuzzlePSC = nullptr;
+
+	UAudioComponent* FireAC = nullptr;
 
 	/** is fire animation playing? */
 	uint32 bPlayingFireAnim : 1;
@@ -457,16 +504,16 @@ protected:
 	float LastFireTime;
 
 	/** current total ammo */
-	UPROPERTY(Transient, Replicated)
+	UPROPERTY(Transient, Replicated) //Transient
 	int32 CurrentAmmo;
 
-	/** current ammo - inside clip */
+	/** current ammo - inside clip */ //Transient
 	UPROPERTY(Transient, Replicated)
 	int32 CurrentAmmoInClip;
 
-	/** burst counter, used for replicating fire events to remote clients */
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
-	int32 BurstCounter;
+	///** burst counter, used for replicating fire events to remote clients */
+	//UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
+	//int32 BurstCounter;
 
 	/** Handle for efficient management of OnEquipFinished timer */
 	FTimerHandle TimerHandle_OnEquipFinished;

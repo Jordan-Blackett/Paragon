@@ -34,40 +34,48 @@ void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * Playe
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// Bind fire event
-	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::OnStartFire);
-	//PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_Gadget::OnStopFire);
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::OnStartFire);
+	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_Gadget::OnStopFire);
 }
 
-//void AParagonCharacter_Gadget::OnStartFire()
-//{
-//	StartWeaponFire();
-//
-//	//BasicAttack->FireWeapon();
-//}
-//
-//void AParagonCharacter_Gadget::StartWeaponFire(FRotator SpawnRotation, FVector SpawnLocation)
-//{
-//	if (!bWantsToFire)
-//	{
-//		bWantsToFire = true;
-//		if (BasicAttack)
-//		{
-//			BasicAttack->FireWeapon();
-//		}
-//	}
-//}
-//
-//void AShooterCharacter::StopWeaponFire()
-//{
-//	if (bWantsToFire)
-//	{
-//		bWantsToFire = false;
-//		if (CurrentWeapon)
-//		{
-//			CurrentWeapon->StopFire();
-//		}
-//	}
-//}
+//////////////////////////////////////////////////////////////////////////
+// Ability 1 - Plasma Blast
+
+
+void AParagonCharacter_Gadget::OnStartFire()
+{
+	StartWeaponFire();
+}
+
+void AParagonCharacter_Gadget::OnStopFire()
+{
+	StopWeaponFire();
+}
+
+void AParagonCharacter_Gadget::StartWeaponFire()
+{
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		if (BasicAttack)
+		{
+			BasicAttack->StartFire();
+		}
+	}
+}
+
+void AParagonCharacter_Gadget::StopWeaponFire()
+{
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		if (BasicAttack)
+		{
+			BasicAttack->StopFire();
+		}
+	}
+}
+
 
 // --- Netcode ---
 

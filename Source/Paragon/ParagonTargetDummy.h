@@ -26,28 +26,19 @@ protected:
 	UTextRenderComponent* CharText;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	/** Marks the properties we wish to replicate */
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//virtual void GetLif etimeReplicat edProps(TArray <FLifetimePro perty>& OutLifetim eProps) c onst over ride;
 
 	/** Applies damage to the character */
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 protected:
-	// --- Character Initial Stats ---
-
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	//float InitialHealth;
-
 	/** Updates the character's text to match with the updated stats */
 	void UpdateCharText();
 
 private:
-
-	//UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
-	//float CurrentHealth;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
+	float DummyHealth;
 
 	/** Called when the Health variable gets updated */
 	UFUNCTION()

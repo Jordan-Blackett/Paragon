@@ -40,11 +40,18 @@ private:
 
 	// --- Abilities ---
 
+	//////////////////////////////////////////////////////////////////////////
 	// Ability 1 - Plasma Blast
 
 	// Fires a projectile
-	void AttemptOnFire();
-	void OnFire(FRotator SpawnRotation, FVector SpawnLocation);
+	void OnStartFire();
+	void OnStopFire();
+
+	/** [local] starts/stops weapon fire */
+	void StartWeaponFire();
+	void StopWeaponFire();
+
+	bool bWantsToFire = false;
 
 	// Netcode - Ability 1 - Plasma Blast
 

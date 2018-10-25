@@ -49,6 +49,7 @@ void AParagonProjectile::PostInitializeComponents()
 
 	ProjectileMovementComp->OnProjectileStop.AddDynamic(this, &AParagonProjectile::OnImpact);
 	CollisionComp->MoveIgnoreActors.Add(Cast<AActor>(Instigator)); //Instigator GetOwner()
+
 	AParagonBasicAttack_Projectile* OwnerWeapon = Cast<AParagonBasicAttack_Projectile>(GetOwner());
 	if (OwnerWeapon)
 	{

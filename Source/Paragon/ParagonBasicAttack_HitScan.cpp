@@ -2,6 +2,7 @@
 
 #include "ParagonBasicAttack_HitScan.h"
 #include "ParagonCharacter.h"
+#include "Net/UnrealNetwork.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -45,66 +46,66 @@ void AParagonBasicAttack_HitScan::Server_NotifyHit_Implementation(const FHitResu
 		const FVector Origin = GetFirePointLocation();
 		const FVector ViewDir = (Impact.Location - Origin).GetSafeNormal();
 
-		DrawDebugLine(GetWorld(), Origin, ViewDir * HitScanConfig.WeaponRange, FColor::Red, true);
+		//DrawDebugLine(GetWorld(), Origin, ViewDir * HitScanConfig.WeaponRange, FColor::Red, true);
 
 		// is the angle between the hit and the view within allowed limits (limit + weapon max angle)
 		const float ViewDotHitDir = FVector::DotProduct(Instigator->GetViewRotation().Vector(), ViewDir);
 		if (ViewDotHitDir > HitScanConfig.AllowedViewDotHitDir - WeaponAngleDot)
 		{
-			//if (CurrentState != EWeaponState::Idle)
-			//{
-			//	if (Impact.GetActor() == NULL)
-			//	{
-			//		if (Impact.bBlockingHit)
-			//		{
-			//			ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
-			//		}
-			//	}
-			//	// assume it told the truth about static things because the don't move and the hit 
-			//	// usually doesn't have significant gameplay implications
-			//	else if (Impact.GetActor()->IsRootComponentStatic() || Impact.GetActor()->IsRootComponentStationary())
-			//	{
-			//		ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
-			//	}
-			//	else
-			//	{
-			//		// Get the component bounding box
-			//		const FBox HitBox = Impact.GetActor()->GetComponentsBoundingBox();
+			if (CurrentState != EWeaponState::Idle)
+			{
+				if (Impact.GetActor() == NULL)
+				{
+					if (Impact.bBlockingHit)
+					{
+						ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
+					}
+				}
+				// assume it told the truth about static things because the don't move and the hit 
+				// usually doesn't have significant gameplay implications
+				else if (Impact.GetActor()->IsRootComponentStatic() || Impact.GetActor()->IsRootComponentStationary())
+				{
+					ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
+				}
+				else
+				{
+					// Get the component bounding box
+					const FBox HitBox = Impact.GetActor()->GetComponentsBoundingBox();
 
-			//		// calculate the box extent, and increase by a leeway
-			//		FVector BoxExtent = 0.5 * (HitBox.Max - HitBox.Min);
-			//		BoxExtent *= InstantConfig.ClientSideHitLeeway;
+					// calculate the box extent, and increase by a leeway
+					FVector BoxExtent = 0.5 * (HitBox.Max - HitBox.Min);
+					BoxExtent *= HitScanConfig.ClientSideHitLeeway;
 
-			//		// avoid precision errors with really thin objects
-			//		BoxExtent.X = FMath::Max(20.0f, BoxExtent.X);
-			//		BoxExtent.Y = FMath::Max(20.0f, BoxExtent.Y);
-			//		BoxExtent.Z = FMath::Max(20.0f, BoxExtent.Z);
+					// avoid precision errors with really thin objects
+					BoxExtent.X = FMath::Max(20.0f, BoxExtent.X);
+					BoxExtent.Y = FMath::Max(20.0f, BoxExtent.Y);
+					BoxExtent.Z = FMath::Max(20.0f, BoxExtent.Z);
 
-			//		// Get the box center
-			//		const FVector BoxCenter = (HitBox.Min + HitBox.Max) * 0.5;
+					// Get the box center
+					const FVector BoxCenter = (HitBox.Min + HitBox.Max) * 0.5;
 
-			//		// if we are within client tolerance
-			//		if (FMath::Abs(Impact.Location.Z - BoxCenter.Z) < BoxExtent.Z &&
-			//			FMath::Abs(Impact.Location.X - BoxCenter.X) < BoxExtent.X &&
-			//			FMath::Abs(Impact.Location.Y - BoxCenter.Y) < BoxExtent.Y)
-			//		{
-			//			ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
-			//		}
-			//		else
-			//		{
-			//			UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s (outside bounding box tolerance)"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
-			//		}
-			//	}
-			//}
+					// if we are within client tolerance
+					if (FMath::Abs(Impact.Location.Z - BoxCenter.Z) < BoxExtent.Z &&
+						FMath::Abs(Impact.Location.X - BoxCenter.X) < BoxExtent.X &&
+						FMath::Abs(Impact.Location.Y - BoxCenter.Y) < BoxExtent.Y)
+					{
+						ProcessInstantHit_Confirmed(Impact, Origin, ShootDir, RandomSeed, ReticleSpread);
+					}
+					else
+					{
+						//UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s (outside bounding box tolerance)"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
+					}
+				}
+			}
 		}
-		//else if (ViewDotHitDir <= InstantConfig.AllowedViewDotHitDir)
-		//{
-		//	UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s (facing too far from the hit direction)"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
-		//}
-		//else
-		//{
-		//	UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
-		//}
+		else if (ViewDotHitDir <= HitScanConfig.AllowedViewDotHitDir)
+		{
+			//UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s (facing too far from the hit direction)"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
+		}
+		else
+		{
+			//UE_LOG(LogShooterWeapon, Log, TEXT("%s Rejected client side hit of %s"), *GetNameSafe(this), *GetNameSafe(Impact.GetActor()));
+		}
 	}
 }
 
@@ -113,27 +114,27 @@ bool AParagonBasicAttack_HitScan::Server_NotifyHit_Validate(const FHitResult& Im
 	return true;
 }
 
-//void AParagonBasicAttack_HitScan::Server_NotifyMiss_Implementation(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread)
-//{
-//	//const FVector Origin = GetMuzzleLocation();
-//
-//	//// play FX on remote clients
-//	//HitNotify.Origin = Origin;
-//	//HitNotify.RandomSeed = RandomSeed;
-//	//HitNotify.ReticleSpread = ReticleSpread;
-//
-//	//// play FX locally
-//	//if (GetNetMode() != NM_DedicatedServer)
-//	//{
-//	//	const FVector EndTrace = Origin + ShootDir * InstantConfig.WeaponRange;
-//	//	SpawnTrailEffect(EndTrace);
-//	//}
-//}
+void AParagonBasicAttack_HitScan::Server_NotifyMiss_Implementation(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread)
+{
+	const FVector Origin = GetFirePointLocation();
 
-//bool AParagonBasicAttack_HitScan::Server_NotifyMiss_Validate(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread)
-//{
-//	return true;
-//}
+	// play FX on remote clients
+	HitNotify.Origin = Origin;
+	HitNotify.RandomSeed = RandomSeed;
+	HitNotify.ReticleSpread = ReticleSpread;
+
+	// play FX locally
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		const FVector EndTrace = Origin + ShootDir * HitScanConfig.WeaponRange;
+		SpawnTrailEffect(EndTrace);
+	}
+}
+
+bool AParagonBasicAttack_HitScan::Server_NotifyMiss_Validate(FVector_NetQuantizeNormal ShootDir, int32 RandomSeed, float ReticleSpread)
+{
+	return true;
+}
 
 void AParagonBasicAttack_HitScan::ProcessHitScanHit(const FHitResult& Impact, const FVector& Origin, const FVector& ShootDir, int32 RandomSeed, float ReticleSpread)
 {
@@ -155,7 +156,7 @@ void AParagonBasicAttack_HitScan::ProcessHitScanHit(const FHitResult& Impact, co
 			else
 			{
 				// notify server of the miss
-				//ServerNotifyMiss(ShootDir, RandomSeed, ReticleSpread);
+				Server_NotifyMiss(ShootDir, RandomSeed, ReticleSpread);
 			}
 		}
 	}
@@ -175,7 +176,11 @@ void AParagonBasicAttack_HitScan::ProcessInstantHit_Confirmed(const FHitResult& 
 	// play FX on remote clients
 	if (Role == ROLE_Authority)
 	{
+		const FVector EndTrace = Origin + ShootDir * HitScanConfig.WeaponRange;
+		const FVector EndPoint = Impact.GetActor() ? Impact.ImpactPoint : EndTrace;
+
 		HitNotify.Origin = Origin;
+		HitNotify.Hitpoint = EndPoint;
 		HitNotify.RandomSeed = RandomSeed;
 		HitNotify.ReticleSpread = ReticleSpread;
 	}
@@ -245,18 +250,22 @@ float AParagonBasicAttack_HitScan::GetCurrentSpread() const
 
 void AParagonBasicAttack_HitScan::OnRep_HitNotify()
 {
-	SimulateInstantHit(HitNotify.Origin, HitNotify.RandomSeed, HitNotify.ReticleSpread);
+	SimulateInstantHit(HitNotify.Origin, HitNotify.Hitpoint, HitNotify.RandomSeed, HitNotify.ReticleSpread);
 }
 
-void AParagonBasicAttack_HitScan::SimulateInstantHit(const FVector& ShotOrigin, int32 RandomSeed, float ReticleSpread)
+void AParagonBasicAttack_HitScan::SimulateInstantHit(const FVector& ShotOrigin, const FVector& HitPoint, int32 RandomSeed, float ReticleSpread)
 {
+	// Client only
 	FRandomStream WeaponRandomStream(RandomSeed);
 	const float ConeHalfAngle = FMath::DegreesToRadians(ReticleSpread * 0.5f);
 
 	const FVector StartTrace = ShotOrigin;
-	const FVector AimDir = GetAdjustedAim();
-	const FVector ShootDir = WeaponRandomStream.VRandCone(AimDir, ConeHalfAngle, ConeHalfAngle);
-	const FVector EndTrace = StartTrace + ShootDir * HitScanConfig.WeaponRange;
+	//const FVector AimDir = GetAdjustedAim();
+	//const FVector ShootDir = WeaponRandomStream.VRandCone(AimDir, ConeHalfAngle, ConeHalfAngle);
+	//const FVector EndTrace = StartTrace + ShootDir * HitScanConfig.WeaponRange;
+	const FVector EndTrace = HitPoint;
+
+	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
 
 	FHitResult Impact = WeaponTrace(StartTrace, EndTrace);
 	if (Impact.bBlockingHit)
@@ -300,7 +309,6 @@ void AParagonBasicAttack_HitScan::SpawnTrailEffect(const FVector& EndPoint)
 	if (HitScanConfig.TrailFX)
 	{
 		const FVector Origin = GetFirePointLocation();
-		//UE_LOG(LogTemp, Warning, TEXT("Trail"));
 		UParticleSystemComponent* TrailPSC = UGameplayStatics::SpawnEmitterAtLocation(this, HitScanConfig.TrailFX, Origin);
 		if (TrailPSC)
 		{
@@ -313,7 +321,8 @@ void AParagonBasicAttack_HitScan::GetLifetimeReplicatedProps(TArray< FLifetimePr
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//DOREPLIFETIME_CONDITION(AParagonBasicAttack_HitScan, HitNotify, COND_SkipOwner);
+	DOREPLIFETIME(AParagonBasicAttack_HitScan, HitScanConfig);
+	DOREPLIFETIME_CONDITION(AParagonBasicAttack_HitScan, HitNotify, COND_SkipOwner);
 }
 
 void AParagonBasicAttack_HitScan::SetWeaponCongfig(FWeaponData WeaponData, FInstantWeaponData HitScanData)
