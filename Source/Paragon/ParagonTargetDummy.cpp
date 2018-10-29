@@ -4,6 +4,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/TextRenderComponent.h"
+#include "UMG/Public/Blueprint/UserWidget.h"
+#include "ParagonWidget_FloatingDamageText.h"
+#include "GameFramework/PlayerController.h"
+#include "Engine/Engine.h"
 
 // Sets default values
 AParagonTargetDummy::AParagonTargetDummy()
@@ -50,8 +54,48 @@ float AParagonTargetDummy::TakeDamage(float Damage, struct FDamageEvent const& D
 	int health = GetCurrentHealth();
 	DummyHealth = GetCurrentHealth();
 
+	// Floating damage text
+	// ()
+	//widget
+	// Replicate damage text
+
+	if (FloatingDamageTextWidgetTemplate != nullptr)
+	{
+		UParagonWidget_FloatingDamageText* FloatingText = CreateWidget<UParagonWidget_FloatingDamageText>(GetWorld(), FloatingDamageTextWidgetTemplate);
+		if (FloatingText) {
+			FloatingText->SetDamageValue(Damage);
+
+			// Get hit position to screen
+			APlayerController* PlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+			//const APlayerController* const PlayerController = Cast<const APlayerController>(GetController());
+
+			if (PlayerController)
+			{
+				FVector2D ScreenLocation; //PlayerController->GetPawn()->GetActorLocation()
+				PlayerController->ProjectWorldLocationToScreen(GetActorLocation(), ScreenLocation);
+
+				int32 ScreenWidth = 0;
+				int32 ScreenHeight = 0;
+				PlayerController->GetViewportSize(ScreenWidth, ScreenHeight);
+				
+				//ScreenLocation.X = ScreenWidth;
+				//ScreenLocation.Y = ScreenHeight;
+				//CharacterLocation2D.X /= width;
+				//CharacterLocation2D.Y /= height;
+
+				FloatingText->SetInitialScreenLocation(ScreenLocation);
+			}
+
+			FloatingText->Init();
+			FloatingText->AddToViewport();
+		}
+	}
+
 	return health;
 }
+
+//Replicate 
+// Replicate()
 
 // Netcode
 

@@ -62,6 +62,7 @@ void AParagonCharacter_LtBelica::SetupPlayerInputComponent(UInputComponent * Pla
 
 void AParagonCharacter_LtBelica::OnStartFire()
 {
+	//RotateToCrossHair();
 	StartWeaponFire();
 }
 

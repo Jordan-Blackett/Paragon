@@ -9,6 +9,9 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SphereComponent.h"
+#include "Engine/Engine.h"
+#include "Math/Vector.h"
+#include "UMG/Public/Blueprint/UserWidget.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParagonCharacter
@@ -107,13 +110,39 @@ void AParagonCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
+		//test slowing - TODO: Find a better way
+		// Slowing fwd to bwd
+		if (Value > 0 && Value > testSlowing)
+		{
+			testSlowing += 0.02f;
+		}
+		// Slowing bwd to fwd
+		else if (Value < 0 && Value < testSlowing)
+		{
+			testSlowing -= 0.02f;
+		}
+		else
+		{
+		}
+
+
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		// Walk backwards face forwards
+		if (Value < 0)
+		{
+			FRotator YawRotation(0, GetViewRotation().Yaw, 0);
+			SetActorRotation(YawRotation);
+			GetCharacterMovement()->bOrientRotationToMovement = false;
+		}
+
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		AddMovementInput(Direction, testSlowing); // Value
+		
 	}
 }
 
@@ -121,6 +150,7 @@ void AParagonCharacter::MoveRight(float Value)
 {
 	if ( (Controller != NULL) && (Value != 0.0f) )
 	{
+		GetCharacterMovement()->bOrientRotationToMovement = true;
 		// find out which way is right
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -129,6 +159,33 @@ void AParagonCharacter::MoveRight(float Value)
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
+	}
+}
+
+void AParagonCharacter::RotateToCrossHair()
+{
+	if ((Controller != NULL))
+	{
+		// Compare player and camera forward vector to decide if the player is looking away
+		FVector PlayerForwardVector = GetActorForwardVector();
+		PlayerForwardVector.Normalize();
+
+		FVector CameraForwardVector = GetFollowCamera()->GetForwardVector();
+		CameraForwardVector.Normalize();
+
+		float AngleInDegree = FMath::Acos(FVector::DotProduct(PlayerForwardVector, CameraForwardVector));
+		AngleInDegree = FMath::RadiansToDegrees(AngleInDegree);
+
+		if (AngleInDegree >= 140)
+		{
+			//FString TheFloatStr = FString::SanitizeFloat(AngleInDegree);
+			//GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Red, *TheFloatStr);
+
+			FRotator YawRotation(0, GetViewRotation().Yaw, 0);
+			SetActorRotation(YawRotation);
+
+			//AddMovementInput(GetActorForwardVector(), 1);
+		}
 	}
 }
 

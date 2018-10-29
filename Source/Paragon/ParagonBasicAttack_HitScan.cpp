@@ -320,6 +320,7 @@ void AParagonBasicAttack_HitScan::SpawnTrailEffect(const FVector& EndPoint)
 void AParagonBasicAttack_HitScan::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AParagonBasicAttack_HitScan, HitScanConfig);
 	DOREPLIFETIME_CONDITION(AParagonBasicAttack_HitScan, HitNotify, COND_SkipOwner);

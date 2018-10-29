@@ -81,6 +81,8 @@ protected:
 	*/
 	void LookUpAtRate(float Rate);
 
+	void RotateToCrossHair();
+
 protected:
 	virtual void BeginPlay();
 
@@ -96,6 +98,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	float InitialMana;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> FloatingDamageTextWidgetTemplate;
+
 private:
 
 	// --- Character Current Stats ---
@@ -105,6 +110,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Stats")
 	float CurrentMana;
+
+	float testSlowing;
 
 public:
 	/** Returns CameraBoom subobject **/
