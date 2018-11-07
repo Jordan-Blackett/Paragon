@@ -45,10 +45,15 @@ struct FWeaponEffectsData
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
 	uint32 bLoopedMuzzleFX : 1;
 
+	/** name of bone/socket for muzzle in weapon mesh */
+	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
+	FName MuzzleAttachPoint;
+
 	FWeaponEffectsData()
 	{
 		MuzzleFX = nullptr;
 		bLoopedMuzzleFX = 1;
+		MuzzleAttachPoint = "";
 	}
 };
 

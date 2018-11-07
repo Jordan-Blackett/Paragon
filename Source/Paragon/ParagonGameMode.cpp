@@ -3,6 +3,7 @@
 #include "ParagonGameMode.h"
 #include "ParagonCharacter.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Blueprint/UserWidget.h"
 
 AParagonGameMode::AParagonGameMode()
 {
@@ -11,5 +12,17 @@ AParagonGameMode::AParagonGameMode()
 	if (PlayerPawnBPClass.Class != NULL)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
+	}
+}
+
+void AParagonGameMode::BeginPlay()
+{
+	if (HUDWidgetClass != nullptr)
+	{
+		CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), HUDWidgetClass);
+		if (CurrentWidget != nullptr)
+		{
+			CurrentWidget->AddToViewport();
+		}
 	}
 }

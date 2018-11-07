@@ -13,6 +13,16 @@ class AParagonGameMode : public AGameModeBase
 
 public:
 	AParagonGameMode();
+
+	virtual void BeginPlay() override;
+
+protected:
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UUserWidget> HUDWidgetClass;
+	
+	UPROPERTY()
+	class UUserWidget* CurrentWidget;
 };
 
 

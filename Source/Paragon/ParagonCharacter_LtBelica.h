@@ -62,7 +62,6 @@ private:
 	float DummyHealth;
 
 	/** Called when the Health variable gets updated */
-	UFUNCTION()
-	void OnRep_Health();
-	
+	virtual void OnRep_Health(float OldHealth) override;
+
 };

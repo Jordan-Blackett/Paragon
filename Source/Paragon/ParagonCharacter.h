@@ -23,6 +23,10 @@ class AParagonCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* CollectionSphere;
 
+	// Statbar
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UParagonWidgetComponent* HealthBarWidgetComp;
+
 public:
 	AParagonCharacter();
 
@@ -83,6 +87,10 @@ protected:
 
 	void RotateToCrossHair();
 
+	//
+
+	void FloatingDamageText(float Damage);
+
 protected:
 	virtual void BeginPlay();
 
@@ -98,14 +106,22 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	float InitialMana;
 
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	FName StatBarAttachPoint;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUserWidget> FloatingDamageTextWidgetTemplate;
+
+	// OnRep
+
+	UFUNCTION()
+	virtual void OnRep_Health(float OldHealth);
 
 private:
 
 	// --- Character Current Stats ---
 
-	UPROPERTY(VisibleAnywhere, Category = "Stats")
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
 	float CurrentHealth;
 
 	UPROPERTY(VisibleAnywhere, Category = "Stats")

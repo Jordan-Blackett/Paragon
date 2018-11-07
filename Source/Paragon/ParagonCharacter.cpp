@@ -1,6 +1,7 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "ParagonCharacter.h"
+#include "Net/UnrealNetwork.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -12,6 +13,10 @@
 #include "Engine/Engine.h"
 #include "Math/Vector.h"
 #include "UMG/Public/Blueprint/UserWidget.h"
+#include "ParagonWidgetComponent.h"
+#include "ParagonUserWidget.h"
+#include "ParagonWidget_FloatingDamageText.h"
+#include "Components/SkeletalMeshComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParagonCharacter
@@ -55,21 +60,22 @@ AParagonCharacter::AParagonCharacter()
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
+	// Create widget comp
+	HealthBarWidgetComp = CreateDefaultSubobject<UParagonWidgetComponent>(TEXT("WidgetComponent"));
+	HealthBarWidgetComp->SetupAttachment(GetMesh(), StatBarAttachPoint);
+	HealthBarWidgetComp->InitWidget();
+
 	// --- Set base stats ---
-
-	// Set base health
-	InitialHealth = 1000.f;
-	CurrentHealth = InitialHealth;
-
-	// Set base mana
-	InitialMana = 1000.f;
-	CurrentMana = InitialMana;
 }
 
 void AParagonCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	// Set base stats
+	CurrentHealth = InitialHealth;
+	CurrentMana = InitialMana;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -110,20 +116,20 @@ void AParagonCharacter::MoveForward(float Value)
 {
 	if ((Controller != NULL) && (Value != 0.0f))
 	{
-		//test slowing - TODO: Find a better way
-		// Slowing fwd to bwd
-		if (Value > 0 && Value > testSlowing)
-		{
-			testSlowing += 0.02f;
-		}
-		// Slowing bwd to fwd
-		else if (Value < 0 && Value < testSlowing)
-		{
-			testSlowing -= 0.02f;
-		}
-		else
-		{
-		}
+		////test slowing - TODO: Find a better way
+		//// Slowing fwd to bwd
+		//if (Value > 0 && Value > testSlowing)
+		//{
+		//	testSlowing += 0.02f;
+		//}
+		//// Slowing bwd to fwd
+		//else if (Value < 0 && Value < testSlowing)
+		//{
+		//	testSlowing -= 0.02f;
+		//}
+		//else
+		//{
+		//}
 
 
 		GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -141,7 +147,7 @@ void AParagonCharacter::MoveForward(float Value)
 
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, testSlowing); // Value
+		AddMovementInput(Direction, Value); // Value testSlowing
 		
 	}
 }
@@ -202,6 +208,38 @@ bool AParagonCharacter::GetIsLocallyControlled()
 	return IsLocallyControlled();
 }
 
+//
+
+void AParagonCharacter::FloatingDamageText(float Damage)
+{
+	if (FloatingDamageTextWidgetTemplate != nullptr)
+	{
+		UParagonWidget_FloatingDamageText* FloatingText = CreateWidget<UParagonWidget_FloatingDamageText>(GetWorld(), FloatingDamageTextWidgetTemplate);
+		if (FloatingText) {
+			FloatingText->SetDamageValue(Damage);
+
+			// Get hit position to screen
+			APlayerController* PlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+			//const APlayerController* const PlayerController = Cast<const APlayerController>(GetController());
+
+			if (PlayerController)
+			{
+				FVector2D ScreenLocation; //PlayerController->GetPawn()->GetActorLocation()
+				PlayerController->ProjectWorldLocationToScreen(GetActorLocation(), ScreenLocation);
+
+				int32 ScreenWidth = 0;
+				int32 ScreenHeight = 0;
+				PlayerController->GetViewportSize(ScreenWidth, ScreenHeight);
+
+				FloatingText->SetInitialScreenLocation(ScreenLocation);
+			}
+
+			FloatingText->Init();
+			FloatingText->AddToViewport();
+		}
+	}
+}
+
 // --- Accessor and Mutator ---
 
 float AParagonCharacter::GetInitialHealth()
@@ -217,6 +255,11 @@ float AParagonCharacter::GetCurrentHealth()
 void AParagonCharacter::SetCurrentHealth(float NewHealth)
 {
 	CurrentHealth = NewHealth;
+
+	if (CurrentHealth <= 0)
+	{
+		CurrentHealth = 0;
+	}
 }
 
 float AParagonCharacter::GetInitialMana()
@@ -227,4 +270,18 @@ float AParagonCharacter::GetInitialMana()
 float AParagonCharacter::GetCurrentMana()
 {
 	return CurrentMana;
+}
+
+void AParagonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AParagonCharacter, CurrentHealth);
+}
+
+// OnRep
+void AParagonCharacter::OnRep_Health(float OldHealth)
+{
+	float damage = CurrentHealth - OldHealth;
+	FloatingDamageText(damage);
 }

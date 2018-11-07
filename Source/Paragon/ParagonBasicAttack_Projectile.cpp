@@ -21,7 +21,7 @@ void AParagonBasicAttack_Projectile::FireWeapon()
 	const FVector EndTrace = StartTrace + ShootDir * ProjectileAdjustRange;
 	FHitResult Impact = WeaponTrace(StartTrace, EndTrace);
 
-	DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
+	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
 
 	// and adjust directions to hit that actor
 	if (Impact.bBlockingHit)

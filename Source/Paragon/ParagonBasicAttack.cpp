@@ -226,10 +226,8 @@ void AParagonBasicAttack::SimulateWeaponFire()
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Test4"));
 	if (WeaponConfig.WeaponEffects.MuzzleFX)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Test3"));
 		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(GetOwner());
 		USkeletalMeshComponent* UseWeaponMesh = PlayerCharacter->GetMesh();
 		if (!WeaponConfig.WeaponEffects.bLoopedMuzzleFX || MuzzlePSC == nullptr)
@@ -237,7 +235,7 @@ void AParagonBasicAttack::SimulateWeaponFire()
 			if (UseWeaponMesh != nullptr) {
 				if (WeaponConfig.FirePointAttachPoint != "")
 				{
-					MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.WeaponEffects.MuzzleFX, UseWeaponMesh, WeaponConfig.FirePointAttachPoint);
+					MuzzlePSC = UGameplayStatics::SpawnEmitterAttached(WeaponConfig.WeaponEffects.MuzzleFX, UseWeaponMesh, WeaponConfig.WeaponEffects.MuzzleAttachPoint);
 				}
 			}
 		}
@@ -245,16 +243,16 @@ void AParagonBasicAttack::SimulateWeaponFire()
 
 	if (!WeaponConfig.WeaponAnimations.bLoopedFireAnim || !bPlayingFireAnim)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ANIM"));
 		PlayWeaponAnimation(WeaponConfig.WeaponAnimations.FireAnim);
 		bPlayingFireAnim = true;
 	}
 
+	//UE_LOG(LogTemp, Warning, TEXT("sound2"));
 	if (WeaponConfig.WeaponSounds.bLoopedFireSound)
 	{
 		if (FireAC == NULL)
 		{
-			FireAC = PlayWeaponSound(WeaponConfig.WeaponSounds.FireLoopSound);
+			FireAC = PlayWeaponSound(WeaponConfig.WeaponSounds.FireSound); //FireLoopSound
 		}
 	}
 	else
@@ -705,8 +703,7 @@ UAudioComponent * AParagonBasicAttack::PlayWeaponSound(USoundCue * Sound)
 	UAudioComponent* AC = NULL;
 	if (Sound && MyPawn)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("soundstart"));
-		//AC = UGameplayStatics::SpawnSoundAttached(Sound, MyPawn->GetRootComponent(), NAME_None, FVector(0, 0, 0));
+		AC = UGameplayStatics::SpawnSoundAttached(Sound, MyPawn->GetRootComponent(), NAME_None); //FVector(0, 0, 0)
 	}
 
 	return AC;

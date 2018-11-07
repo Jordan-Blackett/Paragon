@@ -95,7 +95,7 @@ void AParagonCharacter_LtBelica::StopWeaponFire()
 	}
 }
 
-void AParagonCharacter_LtBelica::OnRep_Health()
+void AParagonCharacter_LtBelica::OnRep_Health(float OldHealth)
 {
 }
 
