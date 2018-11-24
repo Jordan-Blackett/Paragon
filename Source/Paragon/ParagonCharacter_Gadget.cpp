@@ -36,6 +36,8 @@ void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * Playe
 	// Bind fire event
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::OnStartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_Gadget::OnStopFire);
+
+	PlayerInputComponent->BindAction("Ability_1", IE_Pressed, this, &AParagonCharacter_Gadget::StartAbility1);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -73,6 +75,27 @@ void AParagonCharacter_Gadget::StopWeaponFire()
 		{
 			BasicAttack->StopFire();
 		}
+	}
+}
+
+
+void AParagonCharacter_Gadget::StartAbility1()
+{	
+	//if (bHasNoCooldwn && !OnCoolDown)
+	if (!bAbilityPressed)
+	{
+		// Spawn decal / change decal
+		SpawnAbilityIndicator(Ability2Indicator);
+
+		bAbilityPressed = true;
+	}
+	else
+	{
+		HideAbilityIndicator();
+
+		// Cast ability
+
+		bAbilityPressed = false;
 	}
 }
 

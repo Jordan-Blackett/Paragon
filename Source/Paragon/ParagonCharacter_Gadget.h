@@ -21,7 +21,8 @@ public:
 
 	// --- Abilities ---
 
-	// Ability Basic Attack - Plasma Blast
+	//////////////////////////////////////////////////////////////////////////
+	// Ability 1 - Plasma Blast
 	UPROPERTY()
 	AParagonBasicAttack_Projectile* BasicAttack;
 
@@ -31,6 +32,14 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = Ability_BasicAttack)
 	FProjectileWeaponData ProjectileConfig;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Ability 2 - 
+
+	bool bAbilityPressed;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability_2")
+	class UMaterialInterface* Ability2Indicator;
 
 protected:
 	virtual void BeginPlay();
@@ -52,6 +61,11 @@ private:
 	void StopWeaponFire();
 
 	bool bWantsToFire = false;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Ability 2 - 
+
+	void StartAbility1();
 
 	// Netcode - Ability 1 - Plasma Blast
 

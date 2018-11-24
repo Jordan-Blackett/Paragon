@@ -1,6 +1,7 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "ParagonCharacter.h"
+#include "Paragon.h"
 #include "Net/UnrealNetwork.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
@@ -17,6 +18,11 @@
 #include "ParagonUserWidget.h"
 #include "ParagonWidget_FloatingDamageText.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Engine/DecalActor.h"
+#include "Components/DecalComponent.h"
+#include "DrawDebugHelpers.h"
+#include "TimerManager.h"
+#include "Kismet/KismetMathLibrary.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParagonCharacter
@@ -72,6 +78,21 @@ void AParagonCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	// Create widget comp
+	//AController* con = GetController();
+	//if (con != nullptr)
+	//{
+	//	UGameplayStatics::GetPlayerControllerID(con)
+	//	if (con->IsLocalController())
+	//	{
+	//		HealthBarWidgetComp->bHiddenInGame = true;
+	//	}
+		//UGameplayStatics::GetPlayerControllerID()
+		//HealthBarWidgetComp->SetOwnerNoSee(true);
+	//	//HealthBarWidgetComp = NewObject<UParagonWidgetComponent>(this, UParagonWidgetComponent::StaticClass(), TEXT("WidgetComponent"));
+	//	//HealthBarWidgetComp->SetupAttachment(GetMesh(), StatBarAttachPoint);
+	//	//HealthBarWidgetComp->InitWidget();
 
 	// Set base stats
 	CurrentHealth = InitialHealth;
@@ -240,6 +261,81 @@ void AParagonCharacter::FloatingDamageText(float Damage)
 	}
 }
 
+FHitResult AParagonCharacter::Linetrace()
+{
+	FVector CamLoc;
+	FRotator CamRot;
+	GetViewPoint(CamLoc, CamRot);
+
+	FVector ShootDir = CamRot.Vector();
+	FVector Origin = GetMesh()->GetSocketLocation("Gun_LOS");
+
+	// Show ability indicator
+	const float AdjustRange = 10000.0f;
+	const FVector StartTrace = Origin;
+	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
+
+	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
+
+	// Perform trace to retrieve hit info
+	FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(WeaponTrace), true, Instigator);
+	TraceParams.bTraceAsyncScene = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	FHitResult Hit(ForceInit);
+	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
+
+	return Hit;
+}
+
+void AParagonCharacter::SpawnAbilityIndicator(UMaterialInterface* AbilityIndicator)
+{
+	//FHitResult HitResult = Linetrace();
+	//DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
+
+	// Spawn Decal
+	if (CurrentAbilityDecal == nullptr)
+	{
+		ADecalActor* decal = GetWorld()->SpawnActor<ADecalActor>(); //HitResult.Location, FRotator()
+
+		if (decal && AbilityIndicator != nullptr)
+		{
+			decal->SetDecalMaterial(AbilityIndicator);
+			CurrentAbilityDecal = decal;
+			GetWorldTimerManager().SetTimer(IndicatorTimerHandle, this, &AParagonCharacter::MoveAbilityIndicator, 0.05f, true);
+		}
+	} else {
+		// Change decal and move to new location
+		if (CurrentAbilityDecal && AbilityIndicator != nullptr)
+		{
+			MoveAbilityIndicator();
+			CurrentAbilityDecal->SetActorHiddenInGame(false);
+			CurrentAbilityDecal->SetDecalMaterial(AbilityIndicator);
+			GetWorldTimerManager().SetTimer(IndicatorTimerHandle, this, &AParagonCharacter::MoveAbilityIndicator, 0.05f, true);
+		}
+	}
+}
+
+void AParagonCharacter::MoveAbilityIndicator()
+{
+	if (CurrentAbilityDecal != nullptr)
+	{
+		FHitResult HitResult = Linetrace();
+		//DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
+		CurrentAbilityDecal->SetActorLocation(HitResult.Location);
+		float PlayerRotYaw = UKismetMathLibrary::FindLookAtRotation(HitResult.Location, GetActorLocation()).Yaw;
+		FRotator PlayerRot = FRotator(-90, PlayerRotYaw, 0);
+		CurrentAbilityDecal->SetActorRotation(PlayerRot);
+	}
+}
+
+void AParagonCharacter::HideAbilityIndicator()
+{
+	// Hide
+	CurrentAbilityDecal->SetActorHiddenInGame(true);
+	GetWorldTimerManager().ClearTimer(IndicatorTimerHandle);
+}
+
 // --- Accessor and Mutator ---
 
 float AParagonCharacter::GetInitialHealth()
@@ -259,6 +355,15 @@ void AParagonCharacter::SetCurrentHealth(float NewHealth)
 	if (CurrentHealth <= 0)
 	{
 		CurrentHealth = 0;
+	}
+}
+
+float AParagonCharacter::GetHealthPercent()
+{
+	if (CurrentHealth > 0 && InitialHealth > 0) {
+		return CurrentHealth / InitialHealth;
+	} else {
+		return 0.0f;
 	}
 }
 

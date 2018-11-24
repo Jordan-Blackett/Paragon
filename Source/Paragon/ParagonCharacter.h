@@ -57,6 +57,10 @@ public:
 	UFUNCTION()
 	void SetCurrentHealth(float NewHealth);
 
+	// Accessor function for current health 
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetHealthPercent();
+
 	// Accessor function for initial health
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetInitialMana();
@@ -87,9 +91,15 @@ protected:
 
 	void RotateToCrossHair();
 
-	//
+	// Helper functions
 
 	void FloatingDamageText(float Damage);
+
+	FHitResult Linetrace();
+
+	void SpawnAbilityIndicator(UMaterialInterface* AbilityIndicator);
+	void MoveAbilityIndicator();
+	void HideAbilityIndicator();
 
 protected:
 	virtual void BeginPlay();
@@ -128,6 +138,12 @@ private:
 	float CurrentMana;
 
 	float testSlowing;
+
+	UPROPERTY()
+	class ADecalActor* CurrentAbilityDecal = nullptr;
+
+	UPROPERTY()
+	FTimerHandle IndicatorTimerHandle;
 
 public:
 	/** Returns CameraBoom subobject **/
