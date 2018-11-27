@@ -3,6 +3,7 @@
 #include "ParagonCharacter.h"
 #include "Paragon.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemComponent.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -71,7 +72,12 @@ AParagonCharacter::AParagonCharacter()
 	HealthBarWidgetComp->SetupAttachment(GetMesh(), StatBarAttachPoint);
 	HealthBarWidgetComp->InitWidget();
 
+	// Our ability system component.
+	AbilitySystem = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystem"));
+
 	// --- Set base stats ---
+
+
 }
 
 void AParagonCharacter::BeginPlay()
@@ -119,6 +125,16 @@ void AParagonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	PlayerInputComponent->BindAxis("TurnRate", this, &AParagonCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AParagonCharacter::LookUpAtRate);
+
+	// Set up Ability key bindings
+	AbilitySystem->BindAbilityActivationToInputComponent(PlayerInputComponent, FGameplayAbilityInputBinds("ConfirmInput", "CancelInput", "AbilityInput"));
+}
+
+void AParagonCharacter::PossessedBy(AController * NewController)
+{
+	Super::PossessedBy(NewController);
+
+	AbilitySystem->RefreshAbilityActorInfo();
 }
 
 void AParagonCharacter::TurnAtRate(float Rate)

@@ -41,6 +41,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability_2")
 	class UMaterialInterface* Ability2Indicator;
 
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability_2")
+	TSubclassOf<class UGameplayAbility> Ability;
+
+
 protected:
 	virtual void BeginPlay();
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

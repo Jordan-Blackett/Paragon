@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/SphereComponent.h"
 //#include "ParagonProjectile.h"
+#include "AbilitySystemComponent.h"
 
 AParagonCharacter_Gadget::AParagonCharacter_Gadget()
 {
@@ -27,6 +28,15 @@ void AParagonCharacter_Gadget::BeginPlay()
 
 	// Ability Basic Attack - Plasma Blast
 	BasicAttack->SetWeaponCongfig(WeaponConfig, ProjectileConfig);
+
+	if (AbilitySystem)
+	{
+		if (HasAuthority() && Ability)
+		{
+			AbilitySystem->GiveAbility(FGameplayAbilitySpec(Ability.GetDefaultObject(), 1, 0));
+		}
+		AbilitySystem->InitAbilityActorInfo(this, this);
+	}
 }
 
 void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * PlayerInputComponent)

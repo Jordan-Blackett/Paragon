@@ -4,10 +4,25 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "ParagonCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class AbilityInput : uint8
+{
+	Ability_1 UMETA(DisplayName = "Use Spell 1"),
+	UseAbility2 UMETA(DisplayName = "Use Spell 2"),
+	UseAbility3 UMETA(DisplayName = "Use Spell 3"),
+	UseAbility4 UMETA(DisplayName = "Use Spell 4"),
+	WeaponAbility UMETA(DisplayName = "Use Weapon"), //This finally maps the fifth ability(here designated to be your weaponability, or auto-attack, or whatever) to action mapping "WeaponAbility".
+
+													 //You may also do something like define an enum element name that is not actually mapped to an input, for example if you have a passive ability that isn't supposed to have an input. This isn't usually necessary though as you usually grant abilities via input ID,
+													 //which can be negative while enums cannot. In fact, a constant called "INDEX_NONE" exists for the exact purpose of rendering an input as unavailable, and it's simply defined as -1.
+													 //Because abilities are granted by input ID, which is an int, you may use enum elements to describe the ID anyway however, because enums are fancily dressed up ints.
+};
+
 UCLASS(config=Game)
-class AParagonCharacter : public ACharacter
+class AParagonCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -23,9 +38,15 @@ class AParagonCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* CollectionSphere;
 
-	// Statbar
+	// Healthbar
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UParagonWidgetComponent* HealthBarWidgetComp;
+
+protected:
+
+	/** Our ability system */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Abilities, meta = (AllowPrivateAccess = "true"))
+	class UAbilitySystemComponent* AbilitySystem;
 
 public:
 	AParagonCharacter();
@@ -108,6 +129,8 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
+	virtual void PossessedBy(AController * NewController) override;
+
 	// --- Character Initial Stats ---
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
@@ -152,5 +175,7 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	/** Returns CollectionSphere subobject **/
 	FORCEINLINE class USphereComponent* GetCollectionSphere() const { return CollectionSphere; }
+
+	UAbilitySystemComponent* GetAbilitySystemComponent() const override { return AbilitySystem; };
 };
 
