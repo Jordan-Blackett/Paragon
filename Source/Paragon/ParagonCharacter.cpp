@@ -127,7 +127,7 @@ void AParagonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AParagonCharacter::LookUpAtRate);
 
 	// Set up Ability key bindings
-	AbilitySystem->BindAbilityActivationToInputComponent(PlayerInputComponent, FGameplayAbilityInputBinds("ConfirmInput", "CancelInput", "AbilityInput"));
+	//AbilitySystem->BindAbilityActivationToInputComponent(PlayerInputComponent, FGameplayAbilityInputBinds("ConfirmInput", "CancelInput", "AbilityInput"));
 }
 
 void AParagonCharacter::PossessedBy(AController * NewController)
@@ -184,8 +184,7 @@ void AParagonCharacter::MoveForward(float Value)
 
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value); // Value testSlowing
-		
+		AddMovementInput(Direction, Value); // Value testSlowing	
 	}
 }
 
@@ -277,7 +276,7 @@ void AParagonCharacter::FloatingDamageText(float Damage)
 	}
 }
 
-FHitResult AParagonCharacter::Linetrace()
+FHitResult AParagonCharacter::Linetrace() // Linetracefromsocket(string name)
 {
 	FVector CamLoc;
 	FRotator CamRot;
@@ -287,7 +286,7 @@ FHitResult AParagonCharacter::Linetrace()
 	FVector Origin = GetMesh()->GetSocketLocation("Gun_LOS");
 
 	// Show ability indicator
-	const float AdjustRange = 10000.0f;
+	const float AdjustRange = 1000.0f; // range
 	const FVector StartTrace = Origin;
 	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
 
@@ -306,9 +305,6 @@ FHitResult AParagonCharacter::Linetrace()
 
 void AParagonCharacter::SpawnAbilityIndicator(UMaterialInterface* AbilityIndicator)
 {
-	//FHitResult HitResult = Linetrace();
-	//DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
-
 	// Spawn Decal
 	if (CurrentAbilityDecal == nullptr)
 	{
@@ -336,12 +332,47 @@ void AParagonCharacter::MoveAbilityIndicator()
 {
 	if (CurrentAbilityDecal != nullptr)
 	{
-		FHitResult HitResult = Linetrace();
-		//DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
-		CurrentAbilityDecal->SetActorLocation(HitResult.Location);
-		float PlayerRotYaw = UKismetMathLibrary::FindLookAtRotation(HitResult.Location, GetActorLocation()).Yaw;
-		FRotator PlayerRot = FRotator(-90, PlayerRotYaw, 0);
-		CurrentAbilityDecal->SetActorRotation(PlayerRot);
+		FHitResult HitResult = Linetrace(); //range
+		//if(HitResult.bBlockingHit)
+		//{
+		//	DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
+
+		//}
+
+		// TODO MOVE TO FUNCTION
+		if (!HitResult.bBlockingHit)
+		{
+			const FVector StartTrace = HitResult.TraceEnd;
+			const FVector EndTrace = StartTrace + (-FVector::UpVector) * 10000;
+
+			//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Blue, true);
+
+			// Perform trace to retrieve hit info
+			FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(WeaponTrace), true, Instigator);
+			TraceParams.bTraceAsyncScene = true;
+			TraceParams.bReturnPhysicalMaterial = true;
+
+			FHitResult Hit(ForceInit);
+			GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, COLLISION_WEAPON, TraceParams);
+			//DrawDebugPoint(GetWorld(), Hit.Location, 20.f, FColor::Blue, true);
+			CurrentAbilityDecal->SetActorLocation(Hit.Location);
+			float PlayerRotYaw = UKismetMathLibrary::FindLookAtRotation(Hit.Location, GetActorLocation()).Yaw;
+			FRotator PlayerRot = FRotator(-90, PlayerRotYaw, 0);
+			CurrentAbilityDecal->SetActorRotation(PlayerRot);
+
+			AbilityPoint = Hit.Location;
+
+			//UE_LOG(LogTemp, Warning, TEXT("MyCharacter's Location is %s"), *Hit.Location.ToString());
+		} 
+		else 
+		{
+			CurrentAbilityDecal->SetActorLocation(HitResult.Location);
+			float PlayerRotYaw = UKismetMathLibrary::FindLookAtRotation(HitResult.Location, GetActorLocation()).Yaw;
+			FRotator PlayerRot = FRotator(-90, PlayerRotYaw, 0);
+			CurrentAbilityDecal->SetActorRotation(PlayerRot);
+
+			AbilityPoint = HitResult.Location;
+		}
 	}
 }
 

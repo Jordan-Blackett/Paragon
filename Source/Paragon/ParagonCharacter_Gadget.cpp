@@ -31,9 +31,13 @@ void AParagonCharacter_Gadget::BeginPlay()
 
 	if (AbilitySystem)
 	{
-		if (HasAuthority() && Ability)
+		if (HasAuthority())
 		{
-			AbilitySystem->GiveAbility(FGameplayAbilitySpec(Ability.GetDefaultObject(), 1, 0));
+			for (int i = 0; i < AbilitiesSlots.Num(); i++) {
+				//FGameplayAbilitySpecHandle eqe = new FGameplayAbilitySpecHandle();
+				AbilitiesHandles.Add(AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilitiesSlots[i].GetDefaultObject())));
+				//AbilitiesHandles[i] = AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilitiesSlots[i].GetDefaultObject()));
+			}
 		}
 		AbilitySystem->InitAbilityActorInfo(this, this);
 	}
@@ -47,7 +51,12 @@ void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * Playe
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AParagonCharacter_Gadget::OnStartFire);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AParagonCharacter_Gadget::OnStopFire);
 
-	PlayerInputComponent->BindAction("Ability_1", IE_Pressed, this, &AParagonCharacter_Gadget::StartAbility1);
+	PlayerInputComponent->BindAction("Ability_1", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot0);
+	PlayerInputComponent->BindAction("Ability_2", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot1);
+	PlayerInputComponent->BindAction("Ability_3", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot2);
+	PlayerInputComponent->BindAction("Ability_4", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot3);
+	//PlayerInputComponent->BindAction("AbilitySlot4", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot4);
+	//PlayerInputComponent->BindAction("AbilitySlot5", IE_Pressed, this, &AParagonCharacter_Gadget::AbilitySlot5);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,12 +65,48 @@ void AParagonCharacter_Gadget::SetupPlayerInputComponent(UInputComponent * Playe
 
 void AParagonCharacter_Gadget::OnStartFire()
 {
-	StartWeaponFire();
+	if (bAbilityPressed)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Your 1"));
+		HideAbilityIndicator();
+
+		if (Ability2Animation)
+		{
+			PlayAnimMontage(Ability2Animation);
+		}
+
+		// Cast ability
+
+		if (AbilitiesSlots.Num() > CurrentActiveAbility)
+		{
+			//if (AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[CurrentActiveAbility]))
+			if (AbilitySystem->TryActivateAbility(AbilitiesHandles[CurrentActiveAbility]))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("11111"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Ability Failed"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No Ability In Array"));
+		}
+
+		bAbilityPressed = false;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Your 2"));
+		StopAnimMontage(Ability2Animation);
+		StartWeaponFire();
+	}
 }
 
 void AParagonCharacter_Gadget::OnStopFire()
 {
-	StopWeaponFire();
+	//StopWeaponFire();
 }
 
 void AParagonCharacter_Gadget::StartWeaponFire()
@@ -95,19 +140,70 @@ void AParagonCharacter_Gadget::StartAbility1()
 	if (!bAbilityPressed)
 	{
 		// Spawn decal / change decal
-		SpawnAbilityIndicator(Ability2Indicator);
+		if(AbilitiesIndicator.Num() > CurrentActiveAbility)
+		{
+			SpawnAbilityIndicator(AbilitiesIndicator[CurrentActiveAbility]);
+		}
 
 		bAbilityPressed = true;
 	}
-	else
+}
+
+void AParagonCharacter_Gadget::ActivateAbilityInSlot(int32 Slot)
+{
+	if (AbilitySystem)
 	{
-		HideAbilityIndicator();
-
-		// Cast ability
-
-		bAbilityPressed = false;
+		AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot]);
 	}
 }
+
+void AParagonCharacter_Gadget::AbilitySlot0()
+{
+	CurrentActiveAbility = 0;
+	StartAbility1();
+}
+
+void AParagonCharacter_Gadget::AbilitySlot1()
+{
+	ActivateAbilityInSlot(1);
+}
+
+void AParagonCharacter_Gadget::AbilitySlot2()
+{
+	ActivateAbilityInSlot(2);
+}
+
+void AParagonCharacter_Gadget::AbilitySlot3()
+{
+	ActivateAbilityInSlot(3);
+}
+
+void AParagonCharacter_Gadget::AbilitySlot4()
+{
+	ActivateAbilityInSlot(4);
+}
+
+void AParagonCharacter_Gadget::AbilitySlot5()
+{
+	ActivateAbilityInSlot(5);
+}
+
+//
+//float AParagonBasicAttack::PlayWeaponAnimation(UAnimMontage* Animation)
+//{
+//	float Duration = 0.0f;
+//	if (MyPawn)
+//	{
+//		Duration = MyPawn->PlayAnimMontage(Animation);
+//	}
+//	else if (GetOwner())
+//	{
+//		AParagonCharacter* PlayerCharacter = Cast<AParagonCharacter>(GetOwner());
+//		Duration = PlayerCharacter->PlayAnimMontage(Animation);
+//	}
+//
+//	return Duration;
+//}
 
 
 // --- Netcode ---

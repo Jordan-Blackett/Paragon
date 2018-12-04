@@ -90,6 +90,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetCurrentMana();
 
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	FVector GetAbilityPoint() { return AbilityPoint; }
+
 protected:
 
 	/** Called for forwards/backward input */
@@ -144,6 +147,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI")
 	TSubclassOf<UUserWidget> FloatingDamageTextWidgetTemplate;
+
+	FVector AbilityPoint;
+
 
 	// OnRep
 

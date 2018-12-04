@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "ParagonCharacter.h"
 #include "ParagonBasicAttack_Projectile.h"
+#include "GameplayAbilitySpec.h"
 #include "ParagonCharacter_Gadget.generated.h"
+
+//class FGameplayAbilitySpecHandle;
 
 /** Gadget
 * Abilties
@@ -20,6 +23,17 @@ public:
 	AParagonCharacter_Gadget();
 
 	// --- Abilities ---
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	TArray<TSubclassOf<class UGameplayAbility>> AbilitiesSlots;
+
+	TArray<FGameplayAbilitySpecHandle> AbilitiesHandles;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
+	TArray<UMaterialInterface*> AbilitiesIndicator;
+
+	bool bAbilityPressed;
+	int CurrentActiveAbility;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Ability 1 - Plasma Blast
@@ -36,16 +50,8 @@ public:
 	//////////////////////////////////////////////////////////////////////////
 	// Ability 2 - 
 
-	bool bAbilityPressed;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability_2")
-	class UMaterialInterface* Ability2Indicator;
-
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability_2")
-	TSubclassOf<class UGameplayAbility> Ability;
-
+	UPROPERTY(EditDefaultsOnly, Category = "Ability_2")
+	UAnimMontage* Ability2Animation;
 
 protected:
 	virtual void BeginPlay();
@@ -72,6 +78,22 @@ private:
 	// Ability 2 - 
 
 	void StartAbility1();
+
+
+	UFUNCTION()
+	void AbilitySlot0();
+	UFUNCTION()
+	void AbilitySlot1();
+	UFUNCTION()
+	void AbilitySlot2();
+	UFUNCTION()
+	void AbilitySlot3();
+	UFUNCTION()
+	void AbilitySlot4();
+	UFUNCTION()
+	void AbilitySlot5();
+
+	void ActivateAbilityInSlot(int32 Slot);
 
 	// Netcode - Ability 1 - Plasma Blast
 
