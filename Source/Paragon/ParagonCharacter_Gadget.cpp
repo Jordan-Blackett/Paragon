@@ -67,7 +67,6 @@ void AParagonCharacter_Gadget::OnStartFire()
 {
 	if (bAbilityPressed)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Your 1"));
 		HideAbilityIndicator();
 
 		if (Ability2Animation)
@@ -82,7 +81,6 @@ void AParagonCharacter_Gadget::OnStartFire()
 			//if (AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[CurrentActiveAbility]))
 			if (AbilitySystem->TryActivateAbility(AbilitiesHandles[CurrentActiveAbility]))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("11111"));
 			}
 			else
 			{

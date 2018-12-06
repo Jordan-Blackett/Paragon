@@ -9,6 +9,9 @@
 #include "ParagonCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
+#include "Paragon.h"
+#include "Kismet/GameplayStatics.h"
+#include "ParagonExplosionEffect.h"
 
 // Sets default values
 AParagon_Gadget_SpiderMine::AParagon_Gadget_SpiderMine()
@@ -46,88 +49,86 @@ void AParagon_Gadget_SpiderMine::BeginPlay()
 
 	InitLocation = GetActorLocation();
 	
-	GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.1f, true);
+	GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.02f, true);
 }
 
 void AParagon_Gadget_SpiderMine::Init()
 {
 	if (Instigator)
 	{
+		// Set direction
 		FVector Direction = TargetLocation - InitLocation;
-		FVector Direction2 = FVector(Direction.X, Direction.Y, 0);
-		Direction2.Normalize();
-		MovementComponent->SetVelocityInLocalSpace(Direction2 * MovementComponent->InitialSpeed);
+		Direction = FVector(Direction.X, Direction.Y, 0);
+		Direction.Normalize();
+		MovementComponent->SetVelocityInLocalSpace(Direction * MovementComponent->InitialSpeed);
 
-		FRotator Rot = UKismetMathLibrary::FindLookAtRotation(InitLocation, TargetLocation);
-		FRotator Rot2 = FRotator(0, Rot.Yaw + 90, 0);
-		SetActorRotation(Rot2);
+		// Set Rotation
+		FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(InitLocation, TargetLocation);
+		Rotation = FRotator(0, Rotation.Yaw + 90, 0);
+		SetActorRotation(Rotation);
 
-		const FVector StartTrace = GetActorLocation();
-		const FVector EndTrace = StartTrace + Direction2 * 1000;
+		// Debug
+		//const FVector StartTrace2 = GetActorLocation();
+		//const FVector EndTrace2 = StartTrace2 + Direction * 1000;
 
-		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Blue, true);
-		DrawDebugPoint(GetWorld(), TargetLocation, 20.f, FColor::Blue, true);
-		//FRotator Rot = FRotationMatrix::MakeFromX(Direction2).Rotator();
-	}
+		//DrawDebugLine(GetWorld(), StartTrace2, EndTrace2, FColor::Yellow, true);
+		//DrawDebugPoint(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, 0), 20.f, FColor::Yellow, true);
+		//DrawDebugPoint(GetWorld(), TargetLocation, 20.f, FColor::Yellow, true);
 
-	TargetDistance = FVector::Dist(InitLocation, TargetLocation);
-}
-
-void AParagon_Gadget_SpiderMine::OnOverlap(UPrimitiveComponent* ThisComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult)
-{
-	if (OtherActor->GetUniqueID() != Instigator->GetUniqueID())
-	{
-		FGameplayEventData Data;
-		Data.Target = OtherActor;
-		//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Overlap"))), Data);
-		//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
-		MovementComponent->StopMovementImmediately();
-		CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		Destroy();
-	}
-}
-
-void AParagon_Gadget_SpiderMine::OnHit(UPrimitiveComponent* ThisComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor != Instigator)
-	{
-		FGameplayEventData Data;
-		Data.Target = OtherActor;
-		//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Hit"))), Data);
-		//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
-		MovementComponent->StopMovementImmediately();
-		Destroy();
+		TargetDistance = FVector::Dist(FVector(InitLocation.X, InitLocation.Y, 0), FVector(TargetLocation.X, TargetLocation.Y, 0));
 	}
 }
 
 void AParagon_Gadget_SpiderMine::BotDistance()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Your TARGET"));
-	//if (Instigator)
-	//{
-		float Distance = FVector::Dist(InitLocation, GetActorLocation());
-		 // Instigator->getmousedist or new trace
-		//UE_LOG(LogTemp, Warning, TEXT("M %f"), Distance);
-		if (Distance >= TargetDistance)
+	float Distance = FVector::Dist(InitLocation, GetActorLocation());
+	if (Distance >= TargetDistance || bFalling)
+	{
+		if (!bFalling)
 		{
-			// stop timer
-			// activemode();
+			// Fall
+			SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, GetActorLocation().Z));
+			FVector Direction = TargetLocation - GetActorLocation();
+			Direction = FVector(0, 0, Direction.Z);
+			Direction.Normalize();
+			MovementComponent->InitialSpeed = 1000;
+			MovementComponent->SetVelocityInLocalSpace(Direction * MovementComponent->InitialSpeed);
+			bFalling = true;
+		}
+
+		if (UKismetMathLibrary::NearlyEqual_FloatFloat(GetActorLocation().Z, TargetLocation.Z, 40))
+		{
+			SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + 20)); // mesh size/2
 			GetWorldTimerManager().ClearTimer(RangeTimerHandle);
 			MovementComponent->StopMovementImmediately();
+			
+			GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::Explode, FuzeTime, false);
 		}
-	//}
+	}
+}
 
-	//AParagonCharacter* const PlayerController = Cast<AParagonCharacter>(GetInstigatorController());
-	//if (PlayerController)
+void AParagon_Gadget_SpiderMine::Explode()
+{
+	if (ExplosionTemplate)
+	{
+		FTransform const SpawnTransform(GetActorRotation(), GetActorLocation());
+		AParagonExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AParagonExplosionEffect>(ExplosionTemplate, SpawnTransform);
+		if (EffectActor)
+		{
+			UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
+		}
+	}
+
+	//if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType && Role == ROLE_Authority)
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Your test"));
-	//	float Distance = (PlayerController->GetActorLocation() - GetActorLocation()).SizeSquared();
-	//	float TargetDistance = 50.f;
-	//	if (Distance >= TargetDistance)
-	//	{
-	//		UE_LOG(LogTemp, Warning, TEXT("Your message"));
-	//		MovementComponent->StopMovementImmediately();
-	//	}
+		//UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
 	//}
+	
+	FGameplayEventData Data;
+	//Data.Target = OtherActor;
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Overlap"))), Data);
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
+
+	Destroy();
 }
 

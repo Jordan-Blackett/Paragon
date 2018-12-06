@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "Paragon_Gadget_SpiderMine.generated.h"
 
+class AParagonExplosionEffect;
+
 UCLASS()
 class PARAGON_API AParagon_Gadget_SpiderMine : public AActor
 {
@@ -16,13 +18,10 @@ public:
 	AParagon_Gadget_SpiderMine();
 
 	UFUNCTION()
-	void OnOverlap(UPrimitiveComponent* ThisComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult &SweepResult);
-
-	UFUNCTION()
-	void OnHit(UPrimitiveComponent* ThisComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-	UFUNCTION()
 	void BotDistance();
+
+	UFUNCTION()
+	void Explode();
 
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void SetAbilityPoint(FVector AbilityPoint) { TargetLocation = AbilityPoint; }
@@ -55,9 +54,18 @@ private:
 	FVector TargetLocation;
 
 	UPROPERTY()
+	bool bFalling = false;
+
+	UPROPERTY()
 	float TargetDistance;
 
 	UPROPERTY()
 	FTimerHandle RangeTimerHandle;
 
+	UPROPERTY()
+	float FuzeTime = 1.f;
+
+	/** effects for explosion */
+	UPROPERTY(EditDefaultsOnly, Category = Effects)
+	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
 };
