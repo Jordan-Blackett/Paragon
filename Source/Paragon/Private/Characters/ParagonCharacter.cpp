@@ -24,6 +24,8 @@
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayAbilitySpec.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AParagonCharacter
@@ -59,13 +61,10 @@ AParagonCharacter::AParagonCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	 // Create the collection sphere
+	// Create the collection sphere
 	CollectionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollectionShpere"));
 	CollectionSphere->AttachTo(RootComponent);
 	CollectionSphere->SetSphereRadius(200.0f);
-
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
 	// Create widget comp
 	HealthBarWidgetComp = CreateDefaultSubobject<UParagonWidgetComponent>(TEXT("WidgetComponent"));
@@ -74,10 +73,13 @@ AParagonCharacter::AParagonCharacter()
 
 	// Our ability system component.
 	AbilitySystem = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystem"));
+	AbilitySystem->SetIsReplicated(true);
 
-	// --- Set base stats ---
+	// Create the attribute set, this replicates by default
+	AttributeSet = CreateDefaultSubobject<UParagonAttributeSet>(TEXT("AttributeSet"));
 
-
+	//CharacterLevel = 1;
+	//bAbilitiesInitialized = false;
 }
 
 void AParagonCharacter::BeginPlay()
@@ -85,24 +87,49 @@ void AParagonCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	// Create widget comp
-	//AController* con = GetController();
-	//if (con != nullptr)
-	//{
-	//	UGameplayStatics::GetPlayerControllerID(con)
-	//	if (con->IsLocalController())
-	//	{
-	//		HealthBarWidgetComp->bHiddenInGame = true;
-	//	}
-		//UGameplayStatics::GetPlayerControllerID()
-		//HealthBarWidgetComp->SetOwnerNoSee(true);
-	//	//HealthBarWidgetComp = NewObject<UParagonWidgetComponent>(this, UParagonWidgetComponent::StaticClass(), TEXT("WidgetComponent"));
-	//	//HealthBarWidgetComp->SetupAttachment(GetMesh(), StatBarAttachPoint);
-	//	//HealthBarWidgetComp->InitWidget();
+	InitGameplayAbilities();
 
-	// Set base stats
-	CurrentHealth = InitialHealth;
-	CurrentMana = InitialMana;
+	//if (AbilitySystem)
+	//{
+	//	if (HasAuthority())
+	//	{
+	//		for (int i = 0; i < AbilitiesSlots.Num(); i++) {
+	//			//AbilitiesHandles.Add(AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilitiesSlots[i].GetDefaultObject())));
+	//		}
+	//	}
+	//	//AbilitySystem->InitAbilityActorInfo(this, this);
+	//}
+}
+
+void AParagonCharacter::InitGameplayAbilities()
+{
+	check(AbilitySystem);
+
+	if (Role == ROLE_Authority && !bAbilitiesInitialized)
+	{
+		// Grant abilities, but only on the server	
+		for (TSubclassOf<UGameplayAbility>& Abilities : AbilitiesSlots)
+		{
+			AbilitiesHandles.Add(AbilitySystem->GiveAbility(FGameplayAbilitySpec(Abilities, GetCharacterLevel(), INDEX_NONE, this)));
+		}
+
+		// Now apply passives
+		for (TSubclassOf<UGameplayEffect>& GameplayEffect : PassiveGameplayEffects)
+		{
+		//	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		//	EffectContext.AddSourceObject(this);
+
+		//	FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(GameplayEffect, GetCharacterLevel(), EffectContext);
+		//	if (NewHandle.IsValid())
+		//	{
+		//		FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
+		//	}
+		}
+
+		AbilitySystem->InitAbilityActorInfo(this, this);
+
+		bAbilitiesInitialized = true;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -128,13 +155,106 @@ void AParagonCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 	// Set up Ability key bindings
 	//AbilitySystem->BindAbilityActivationToInputComponent(PlayerInputComponent, FGameplayAbilityInputBinds("ConfirmInput", "CancelInput", "AbilityInput"));
+	PlayerInputComponent->BindAction("Ability_0", IE_Pressed, this, &AParagonCharacter::AbilitySlot0);
+	PlayerInputComponent->BindAction("Ability_1", IE_Pressed, this, &AParagonCharacter::AbilitySlot1);
+	PlayerInputComponent->BindAction("Ability_2", IE_Pressed, this, &AParagonCharacter::AbilitySlot2);
+	PlayerInputComponent->BindAction("Ability_3", IE_Pressed, this, &AParagonCharacter::AbilitySlot3);
+	PlayerInputComponent->BindAction("Ability_4", IE_Pressed, this, &AParagonCharacter::AbilitySlot4);
 }
 
 void AParagonCharacter::PossessedBy(AController * NewController)
 {
 	Super::PossessedBy(NewController);
 
+	// Initialize our abilities
+	if (AbilitySystem)
+	{
+		AbilitySystem->InitAbilityActorInfo(this, this);
+		//AddStartupGameplayAbilities();
+	}
+
 	AbilitySystem->RefreshAbilityActorInfo();
+}
+
+void AParagonCharacter::ActivateAbilityInSlot(int32 Slot)
+{
+	if (AbilitySystem)
+	{
+		AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot]);
+	}
+}
+
+void AParagonCharacter::StartAbility()
+{
+	if (!bAbilityPressed)
+	{
+		// Spawn decal / change decal
+		if (AbilitiesIndicator.Num() > CurrentActiveAbility)
+		{
+			SpawnAbilityIndicator(AbilitiesIndicator[CurrentActiveAbility]);
+		}
+
+		bAbilityPressed = true;
+	}
+}
+
+void AParagonCharacter::AbilitySlot0()
+{
+	if (bAbilityPressed)
+	{
+		HideAbilityIndicator();
+
+		//if (Ability2Animation)
+		//{
+		//	PlayAnimMontage(Ability2Animation);
+		//}
+
+		// Cast ability
+		if (AbilitiesSlots.Num() > CurrentActiveAbility)
+		{
+			if (AbilitySystem->TryActivateAbility(AbilitiesHandles[CurrentActiveAbility])) {
+			} else {
+				UE_LOG(LogTemp, Warning, TEXT("Ability Failed"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No Ability In Array"));
+		}
+
+		bAbilityPressed = false;
+	}
+	else
+	{
+		CurrentActiveAbility = 0;
+		StartAbility();
+	}
+}
+
+void AParagonCharacter::AbilitySlot1()
+{
+	CurrentActiveAbility = 1;
+	StartAbility();
+}
+
+void AParagonCharacter::AbilitySlot2()
+{
+	ActivateAbilityInSlot(2);
+}
+
+void AParagonCharacter::AbilitySlot3()
+{
+	ActivateAbilityInSlot(3);
+}
+
+void AParagonCharacter::AbilitySlot4()
+{
+	ActivateAbilityInSlot(4);
+}
+
+void AParagonCharacter::AbilitySlot5()
+{
+	ActivateAbilityInSlot(5);
 }
 
 void AParagonCharacter::TurnAtRate(float Rate)
@@ -167,7 +287,6 @@ void AParagonCharacter::MoveForward(float Value)
 		//else
 		//{
 		//}
-
 
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		// Walk backwards face forwards
@@ -220,9 +339,6 @@ void AParagonCharacter::RotateToCrossHair()
 
 		if (AngleInDegree >= 140)
 		{
-			//FString TheFloatStr = FString::SanitizeFloat(AngleInDegree);
-			//GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Red, *TheFloatStr);
-
 			FRotator YawRotation(0, GetViewRotation().Yaw, 0);
 			SetActorRotation(YawRotation);
 
@@ -243,8 +359,6 @@ bool AParagonCharacter::GetIsLocallyControlled()
 {
 	return IsLocallyControlled();
 }
-
-//
 
 void AParagonCharacter::FloatingDamageText(float Damage)
 {
@@ -385,55 +499,49 @@ void AParagonCharacter::HideAbilityIndicator()
 
 // --- Accessor and Mutator ---
 
-float AParagonCharacter::GetInitialHealth()
+float AParagonCharacter::GetCurrentHealth() const
 {
-	return InitialHealth;
+	return AttributeSet->GetHealth();;
 }
 
-float AParagonCharacter::GetCurrentHealth()
+float AParagonCharacter::GetMaxHealth() const
 {
-	return CurrentHealth;
+	return AttributeSet->GetHealth();
 }
 
-void AParagonCharacter::SetCurrentHealth(float NewHealth)
-{
-	CurrentHealth = NewHealth;
+//float AParagonCharacter::GetHealthPercent()
+//{
+//	if (CurrentHealth > 0 && InitialHealth > 0) {
+//		return CurrentHealth / InitialHealth;
+//	} else {
+//		return 0.0f;
+//	}
+//}
 
-	if (CurrentHealth <= 0)
-	{
-		CurrentHealth = 0;
-	}
+float AParagonCharacter::GetCurrentMana() const
+{
+	return AttributeSet->GetHealth();
 }
 
-float AParagonCharacter::GetHealthPercent()
+float AParagonCharacter::GetMaxMana() const
 {
-	if (CurrentHealth > 0 && InitialHealth > 0) {
-		return CurrentHealth / InitialHealth;
-	} else {
-		return 0.0f;
-	}
+	return AttributeSet->GetHealth();
 }
 
-float AParagonCharacter::GetInitialMana()
+float AParagonCharacter::GetMoveSpeed() const
 {
-	return InitialMana;
+	return AttributeSet->GetHealth();
 }
 
-float AParagonCharacter::GetCurrentMana()
+int32 AParagonCharacter::GetCharacterLevel() const
 {
-	return CurrentMana;
+	return CharacterLevel;
 }
 
 void AParagonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AParagonCharacter, CurrentHealth);
-}
-
-// OnRep
-void AParagonCharacter::OnRep_Health(float OldHealth)
-{
-	float damage = CurrentHealth - OldHealth;
-	FloatingDamageText(damage);
+	DOREPLIFETIME(AParagonCharacter, CharacterLevel);
+	DOREPLIFETIME(AParagonCharacter, AbilityPoint);
 }

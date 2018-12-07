@@ -24,6 +24,9 @@ AParagon_Gadget_SpiderMine::AParagon_Gadget_SpiderMine()
 
 	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MovementComponent"));
 	MovementComponent->bAutoActivate = false;
+
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
+	SkeletalMeshComponent->AttachTo(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -31,25 +34,17 @@ void AParagon_Gadget_SpiderMine::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CollisionComponent->MoveIgnoreActors.Add(Cast<AActor>(Instigator));
-
-	MovementComponent->UpdateComponentToWorld();
-	//MovementComponent->SetVelocityInLocalSpace(FVector(1000.f, 0.f, 0.f));
-	MovementComponent->Activate();
-
-	if (bSendOverlapEvents)
+	if (Instigator)
 	{
-		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AParagon_Gadget_SpiderMine::OnOverlap);
-	}
+		CollisionComponent->MoveIgnoreActors.Add(Cast<AActor>(Instigator));
 
-	if (bSendHitEvents)
-	{
-		CollisionComponent->OnComponentHit.AddDynamic(this, &AParagon_Gadget_SpiderMine::OnHit);
-	}
+		InitLocation = GetActorLocation();
 
-	InitLocation = GetActorLocation();
-	
-	GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.02f, true);
+		GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.02f, true);
+
+		SetAbilityPoint(Cast<AParagonCharacter>(Instigator)->GetAbilityPoint());
+		Init();
+	}
 }
 
 void AParagon_Gadget_SpiderMine::Init()
@@ -65,7 +60,11 @@ void AParagon_Gadget_SpiderMine::Init()
 		// Set Rotation
 		FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(InitLocation, TargetLocation);
 		Rotation = FRotator(0, Rotation.Yaw + 90, 0);
-		SetActorRotation(Rotation);
+		//SetActorRotation(Rotation);
+		SkeletalMeshComponent->SetRelativeRotation(Rotation);
+
+		MovementComponent->UpdateComponentToWorld();
+		MovementComponent->Activate();
 
 		// Debug
 		//const FVector StartTrace2 = GetActorLocation();
@@ -124,10 +123,10 @@ void AParagon_Gadget_SpiderMine::Explode()
 		//UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
 	//}
 	
-	FGameplayEventData Data;
-	//Data.Target = OtherActor;
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Overlap"))), Data);
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
+	//FGameplayEventData Data;
+	////Data.Target = OtherActor;
+	//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Overlap"))), Data);
+	//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
 
 	Destroy();
 }

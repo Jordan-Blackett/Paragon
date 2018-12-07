@@ -22,19 +22,6 @@ class PARAGON_API AParagonCharacter_Gadget : public AParagonCharacter
 public:
 	AParagonCharacter_Gadget();
 
-	// --- Abilities ---
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
-	TArray<TSubclassOf<class UGameplayAbility>> AbilitiesSlots;
-
-	TArray<FGameplayAbilitySpecHandle> AbilitiesHandles;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Abilities")
-	TArray<UMaterialInterface*> AbilitiesIndicator;
-
-	bool bAbilityPressed;
-	int CurrentActiveAbility;
-
 	//////////////////////////////////////////////////////////////////////////
 	// Ability 1 - Plasma Blast
 	UPROPERTY()
@@ -78,22 +65,6 @@ private:
 	// Ability 2 - 
 
 	void StartAbility1();
-
-
-	UFUNCTION()
-	void AbilitySlot0();
-	UFUNCTION()
-	void AbilitySlot1();
-	UFUNCTION()
-	void AbilitySlot2();
-	UFUNCTION()
-	void AbilitySlot3();
-	UFUNCTION()
-	void AbilitySlot4();
-	UFUNCTION()
-	void AbilitySlot5();
-
-	void ActivateAbilityInSlot(int32 Slot);
 
 	// Netcode - Ability 1 - Plasma Blast
 

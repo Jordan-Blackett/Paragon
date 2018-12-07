@@ -58,10 +58,10 @@ private:
 
 	void ApplyWeaponConfig(FWeaponData& WeaponDataOut, FInstantWeaponData& HitscanDataOut);
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
-	float DummyHealth;
+	//UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Health, Category = "Stats")
+	//float DummyHealth;
 
-	/** Called when the Health variable gets updated */
-	virtual void OnRep_Health(float OldHealth) override;
+	///** Called when the Health variable gets updated */
+	//virtual void OnRep_Health(float OldHealth) override;
 
 };

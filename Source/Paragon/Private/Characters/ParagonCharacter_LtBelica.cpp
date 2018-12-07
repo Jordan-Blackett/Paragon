@@ -95,9 +95,9 @@ void AParagonCharacter_LtBelica::StopWeaponFire()
 	}
 }
 
-void AParagonCharacter_LtBelica::OnRep_Health(float OldHealth)
-{
-}
+//void AParagonCharacter_LtBelica::OnRep_Health(float OldHealth)
+//{
+//}
 
 void AParagonCharacter_LtBelica::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

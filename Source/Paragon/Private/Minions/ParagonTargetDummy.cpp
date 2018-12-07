@@ -26,11 +26,11 @@ float AParagonTargetDummy::TakeDamage(float Damage, struct FDamageEvent const& D
 
 	if (Role == ROLE_Authority) {
 		//Decrease the character's hp 
-		SetCurrentHealth(GetCurrentHealth() - Damage);
+		//SetCurrentHealth(GetCurrentHealth() - Damage);
 	}
 
 	int health = GetCurrentHealth();
-	SetCurrentHealth(GetCurrentHealth());
+	//SetCurrentHealth(GetCurrentHealth());
 
 	// Locally 
 	FloatingDamageText(Damage);

@@ -17,6 +17,13 @@ public:
 	// Sets default values for this actor's properties
 	AParagon_Gadget_SpiderMine();
 
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void Init();
+
 	UFUNCTION()
 	void BotDistance();
 
@@ -26,25 +33,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void SetAbilityPoint(FVector AbilityPoint) { TargetLocation = AbilityPoint; }
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-	UFUNCTION(BlueprintCallable)
-	void Init();
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ProjectileActor)
 	class UProjectileMovementComponent* MovementComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ProjectileActor)
 	class USphereComponent* CollisionComponent;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = ProjectileActor)
-	bool bSendOverlapEvents;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = ProjectileActor)
-	bool bSendHitEvents;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = ProjectileActor)
-	bool bTreatOverlapAsHit;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = ProjectileActor)
+	class USkeletalMeshComponent* SkeletalMeshComponent;
 
 private:
 	UPROPERTY()
