@@ -78,8 +78,8 @@ AParagonCharacter::AParagonCharacter()
 	// Create the attribute set, this replicates by default
 	AttributeSet = CreateDefaultSubobject<UParagonAttributeSet>(TEXT("AttributeSet"));
 
-	//CharacterLevel = 1;
-	//bAbilitiesInitialized = false;
+	CharacterLevel = 15;
+	bAbilitiesInitialized = false;
 }
 
 void AParagonCharacter::BeginPlay()
@@ -99,6 +99,9 @@ void AParagonCharacter::BeginPlay()
 	//	}
 	//	//AbilitySystem->InitAbilityActorInfo(this, this);
 	//}
+
+	// Regen
+	GetWorldTimerManager().SetTimer(RegenTimerHandle, this, &AParagonCharacter::Regen, 1.f, true);
 }
 
 void AParagonCharacter::InitGameplayAbilities()
@@ -116,14 +119,14 @@ void AParagonCharacter::InitGameplayAbilities()
 		// Now apply passives
 		for (TSubclassOf<UGameplayEffect>& GameplayEffect : PassiveGameplayEffects)
 		{
-		//	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
-		//	EffectContext.AddSourceObject(this);
+			FGameplayEffectContextHandle EffectContext = AbilitySystem->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
 
-		//	FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(GameplayEffect, GetCharacterLevel(), EffectContext);
-		//	if (NewHandle.IsValid())
-		//	{
-		//		FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystemComponent);
-		//	}
+			FGameplayEffectSpecHandle NewHandle = AbilitySystem->MakeOutgoingSpec(GameplayEffect, GetCharacterLevel(), EffectContext);
+			if (NewHandle.IsValid())
+			{
+				FActiveGameplayEffectHandle ActiveGEHandle = AbilitySystem->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), AbilitySystem);
+			}
 		}
 
 		AbilitySystem->InitAbilityActorInfo(this, this);
@@ -497,40 +500,74 @@ void AParagonCharacter::HideAbilityIndicator()
 	GetWorldTimerManager().ClearTimer(IndicatorTimerHandle);
 }
 
+void AParagonCharacter::Regen()
+{
+	// Health Regen
+	float NewHealth = GetHealth() + GetHealthRegen();
+	NewHealth = (NewHealth >= GetMaxHealth()) ? GetMaxHealth() : NewHealth;
+	AttributeSet->SetHealth(NewHealth);
+
+	// Mana Regen
+	float NewMana = GetMana() + GetManaRegen();
+	NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
+	AttributeSet->SetMana(NewMana);
+}
+
 // --- Accessor and Mutator ---
 
-float AParagonCharacter::GetCurrentHealth() const
+float AParagonCharacter::GetHealth() const
 {
 	return AttributeSet->GetHealth();;
 }
 
 float AParagonCharacter::GetMaxHealth() const
 {
-	return AttributeSet->GetHealth();
+	return AttributeSet->GetMaxHealth();
 }
 
-//float AParagonCharacter::GetHealthPercent()
-//{
-//	if (CurrentHealth > 0 && InitialHealth > 0) {
-//		return CurrentHealth / InitialHealth;
-//	} else {
-//		return 0.0f;
-//	}
-//}
-
-float AParagonCharacter::GetCurrentMana() const
+float AParagonCharacter::GetHealthRegen() const
 {
-	return AttributeSet->GetHealth();
+	return AttributeSet->GetHealthRegen();
+}
+
+float AParagonCharacter::GetMana() const
+{
+	return AttributeSet->GetMana();
 }
 
 float AParagonCharacter::GetMaxMana() const
 {
-	return AttributeSet->GetHealth();
+	return AttributeSet->GetMaxMana();
+}
+
+float AParagonCharacter::GetManaRegen() const
+{
+	return AttributeSet->GetManaRegen();
+}
+
+float AParagonCharacter::GetAttackDamage() const
+{
+	return AttributeSet->GetAttackDamage();
+}
+
+float AParagonCharacter::GetAttackSpeed() const
+{
+	return AttributeSet->GetAttackSpeed();
+}
+
+float AParagonCharacter::GetAbilityDefense() const
+{
+	return AttributeSet->GetAbilityDefense();
+}
+
+float AParagonCharacter::GetBaseDefense() const
+{
+	return AttributeSet->GetBaseDefense();
 }
 
 float AParagonCharacter::GetMoveSpeed() const
 {
-	return AttributeSet->GetHealth();
+	return AttributeSet->GetMoveSpeed();
 }
 
 int32 AParagonCharacter::GetCharacterLevel() const

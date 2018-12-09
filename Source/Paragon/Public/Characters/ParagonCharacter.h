@@ -74,21 +74,40 @@ public:
 	// Health
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
-	float GetCurrentHealth() const;
+	float GetHealth() const;
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetMaxHealth() const;
 
-	//UFUNCTION(BlueprintPure, Category = "Stats")
-	//float GetHealthPercent();
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetHealthRegen() const;
 
 	// Mana
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
-	float GetCurrentMana() const;
+	float GetMana() const;
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetMaxMana() const;
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetManaRegen() const;
+
+	// Attack
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetAttackDamage() const;
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetAttackSpeed() const;
+
+	// Defense
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetAbilityDefense() const;
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetBaseDefense() const;
 
 	// Movement speed
 
@@ -170,6 +189,9 @@ protected:
 
 	//UPROPERTY()
 	int32 bAbilitiesInitialized;
+
+	UPROPERTY()
+	FTimerHandle RegenTimerHandle;
 
 	////////////////////////////////////
 	// --- ---
@@ -287,6 +309,8 @@ protected:
 	void SpawnAbilityIndicator(UMaterialInterface* AbilityIndicator);
 	void MoveAbilityIndicator();
 	void HideAbilityIndicator();
+
+	void Regen();
 
 public:
 	/** Returns CameraBoom subobject **/
