@@ -118,15 +118,23 @@ void AParagon_Gadget_SpiderMine::Explode()
 		}
 	}
 
-	//if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType && Role == ROLE_Authority)
-	//{
-		//UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
-	//}
-	
-	//FGameplayEventData Data;
-	////Data.Target = OtherActor;
-	//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.Overlap"))), Data);
-	//UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(Instigator, FGameplayTag::RequestGameplayTag(FName(TEXT("Event.ProjectileDestruction"))), FGameplayEventData());
+	if (Role == ROLE_Authority)
+	{
+		TArray<TEnumAsByte<EObjectTypeQuery>> CollisionType;
+		CollisionType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+		TSubclassOf<AParagonCharacter> ActorFilter;
+		TArray<AActor*> ActorsIgnore;
+		ActorsIgnore.Add(Instigator);
+		TArray<AActor*> OverlappedActors;
+
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), TargetLocation, 400, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
+		DrawDebugSphere(GetWorld(), TargetLocation, 400, 24, FColor::Yellow, 5, 1);
+		
+		for (AActor* Actor : OverlappedActors)
+		{
+			Cast<AParagonCharacter>(Actor)->TakeDamageEffectSpecs(TargetGameplayEffectSpecs);
+		}
+	}
 
 	Destroy();
 }

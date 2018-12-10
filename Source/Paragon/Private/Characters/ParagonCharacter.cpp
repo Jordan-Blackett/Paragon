@@ -89,19 +89,11 @@ void AParagonCharacter::BeginPlay()
 
 	InitGameplayAbilities();
 
-	//if (AbilitySystem)
-	//{
-	//	if (HasAuthority())
-	//	{
-	//		for (int i = 0; i < AbilitiesSlots.Num(); i++) {
-	//			//AbilitiesHandles.Add(AbilitySystem->GiveAbility(FGameplayAbilitySpec(AbilitiesSlots[i].GetDefaultObject())));
-	//		}
-	//	}
-	//	//AbilitySystem->InitAbilityActorInfo(this, this);
-	//}
-
-	// Regen
-	GetWorldTimerManager().SetTimer(RegenTimerHandle, this, &AParagonCharacter::Regen, 1.f, true);
+	if (Role == ROLE_Authority)
+	{
+		// Regen
+		GetWorldTimerManager().SetTimer(RegenTimerHandle, this, &AParagonCharacter::Regen, 1.f, true);
+	}
 }
 
 void AParagonCharacter::InitGameplayAbilities()
@@ -177,6 +169,20 @@ void AParagonCharacter::PossessedBy(AController * NewController)
 	}
 
 	AbilitySystem->RefreshAbilityActorInfo();
+}
+
+void AParagonCharacter::TakeDamageEffectSpecs(TArray<FGameplayEffectSpecHandle>& TargetGameplayEffectSpecs)
+{
+	if (Role == ROLE_Authority) {
+		//Decrease the character's hp - Apply gameplay effect
+		for (const FGameplayEffectSpecHandle& SpecHandle : TargetGameplayEffectSpecs)
+		{
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystem->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
+	}
 }
 
 void AParagonCharacter::ActivateAbilityInSlot(int32 Slot)

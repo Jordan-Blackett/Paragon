@@ -46,21 +46,7 @@ public:
 	////////////////////////////////////
 	// --- Functions ---
 
-	/**
-	* Attempts to activate all abilities that match the specified tags
-	* Returns true if it thinks it activated, but it may return false positives due to failure later in activation.
-	* If bAllowRemoteActivation is true, it will remotely activate local/server abilities, if false it will only try to locally activate the ability
-	*/
-	//UFUNCTION(BlueprintCallable, Category = "Abilities")
-	//bool ActivateAbilitiesWithTags(FGameplayTagContainer AbilityTags, bool bAllowRemoteActivation = true);
-
-	/** Returns a list of active abilities matching the specified tags. This only returns if the ability is currently running */
-	//UFUNCTION(BlueprintCallable, Category = "Abilities")
-	//void GetActiveAbilitiesWithTags(FGameplayTagContainer AbilityTags, TArray<URPGGameplayAbility*>& ActiveAbilities);
-
-	/** Returns total time and remaining time for cooldown tags. Returns false if no active cooldowns found */
-	//UFUNCTION(BlueprintCallable, Category = "Abilities")
-	//bool GetCooldownRemainingForTag(FGameplayTagContainer CooldownTags, float& TimeRemaining, float& CooldownDuration);
+	void TakeDamageEffectSpecs(TArray<FGameplayEffectSpecHandle>& TargetGameplayEffectSpecs);
 
 	////////////////////////////////////
 	// --- Helper Functions ---
@@ -224,46 +210,6 @@ protected:
 
 	/** Apply the startup gameplay abilities and effects */
 	void InitGameplayAbilities();
-
-	/**
-	* Called when character takes damage, which may have killed them
-	*
-	* @param DamageAmount Amount of damage that was done, not clamped based on current health
-	* @param HitInfo The hit info that generated this damage
-	* @param DamageTags The gameplay tags of the event that did the damage
-	* @param InstigatorCharacter The character that initiated this damage
-	* @param DamageCauser The actual actor that did the damage, might be a weapon or projectile
-	*/
-	//UFUNCTION(BlueprintImplementableEvent)
-	//void OnDamaged(float DamageAmount, const FHitResult& HitInfo, const struct FGameplayTagContainer& DamageTags, ARPGCharacterBase* InstigatorCharacter, AActor* DamageCauser);
-
-	/**
-	* Called when health is changed, either from healing or from being damaged
-	* For damage this is called in addition to OnDamaged/OnKilled
-	*
-	* @param DeltaValue Change in health value, positive for heal, negative for cost. If 0 the delta is unknown
-	* @param EventTags The gameplay tags of the event that changed mana
-	*/
-	//UFUNCTION(BlueprintImplementableEvent)
-	//void OnHealthChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
-
-	/**
-	* Called when mana is changed, either from healing or from being used as a cost
-	*
-	* @param DeltaValue Change in mana value, positive for heal, negative for cost. If 0 the delta is unknown
-	* @param EventTags The gameplay tags of the event that changed mana
-	*/
-	//UFUNCTION(BlueprintImplementableEvent)
-	//void OnManaChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
-
-	/**
-	* Called when movement speed is changed
-	*
-	* @param DeltaValue Change in move speed
-	* @param EventTags The gameplay tags of the event that changed mana
-	*/
-	//UFUNCTION(BlueprintImplementableEvent)
-	//void OnMoveSpeedChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
 
 	// Called from RPGAttributeSet, these call BP events above
 	//virtual void HandleDamage(float DamageAmount, const FHitResult& HitInfo, const struct FGameplayTagContainer& DamageTags, ARPGCharacterBase* InstigatorCharacter, AActor* DamageCauser);

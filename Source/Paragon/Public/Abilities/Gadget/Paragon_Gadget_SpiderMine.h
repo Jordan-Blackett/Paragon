@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameplayEffectTypes.h"
 #include "Paragon_Gadget_SpiderMine.generated.h"
 
+//class UGameplayEffect;
 class AParagonExplosionEffect;
 
 UCLASS()
@@ -33,6 +35,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Stats")
 	void SetAbilityPoint(FVector AbilityPoint) { TargetLocation = AbilityPoint; }
 
+	UFUNCTION(BlueprintCallable, Category = "Stats")
+	void SetGameplayEffectSpecs(TArray<FGameplayEffectSpecHandle> GameplayEffectSpecs) { TargetGameplayEffectSpecs = GameplayEffectSpecs; }
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ProjectileActor)
 	class UProjectileMovementComponent* MovementComponent;
 
@@ -43,6 +48,9 @@ protected:
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
 private:
+	UPROPERTY()
+	TArray<FGameplayEffectSpecHandle> TargetGameplayEffectSpecs;
+
 	UPROPERTY()
 	FVector InitLocation;
 
