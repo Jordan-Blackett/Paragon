@@ -78,7 +78,7 @@ AParagonCharacter::AParagonCharacter()
 	// Create the attribute set, this replicates by default
 	AttributeSet = CreateDefaultSubobject<UParagonAttributeSet>(TEXT("AttributeSet"));
 
-	CharacterLevel = 15;
+	CharacterLevel = 1;
 	bAbilitiesInitialized = false;
 }
 
@@ -508,15 +508,15 @@ void AParagonCharacter::HideAbilityIndicator()
 
 void AParagonCharacter::Regen()
 {
-	// Health Regen
-	float NewHealth = GetHealth() + GetHealthRegen();
-	NewHealth = (NewHealth >= GetMaxHealth()) ? GetMaxHealth() : NewHealth;
-	AttributeSet->SetHealth(NewHealth);
+	//// Health Regen
+	//float NewHealth = GetHealth() + GetHealthRegen();
+	//NewHealth = (NewHealth >= GetMaxHealth()) ? GetMaxHealth() : NewHealth;
+	//AttributeSet->SetHealth(NewHealth);
 
-	// Mana Regen
-	float NewMana = GetMana() + GetManaRegen();
-	NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
-	AttributeSet->SetMana(NewMana);
+	//// Mana Regen
+	//float NewMana = GetMana() + GetManaRegen();
+	//NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
+	//AttributeSet->SetMana(NewMana);
 }
 
 // --- Accessor and Mutator ---

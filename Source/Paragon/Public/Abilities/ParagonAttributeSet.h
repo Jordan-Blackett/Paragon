@@ -26,7 +26,7 @@ public:
 	// Constructor and overrides
 	UParagonAttributeSet();
 	//virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
-	//virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Hitpoints
@@ -69,6 +69,16 @@ public:
 	FGameplayAttributeData AttackSpeed;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AttackSpeed)
 
+	// Ability Power
+	UPROPERTY(BlueprintReadOnly, Category = "Attack", ReplicatedUsing = OnRep_AbilityPower)
+	FGameplayAttributeData AbilityPower;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityPower)
+
+	// Armour Penetration
+	UPROPERTY(BlueprintReadOnly, Category = "Attack", ReplicatedUsing = OnRep_ArmourPenetration)
+	FGameplayAttributeData ArmourPenetration;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, ArmourPenetration)
+
 	// Ability Defense
 	UPROPERTY(BlueprintReadOnly, Category = "Defense", ReplicatedUsing = OnRep_AbilityDefense)
 	FGameplayAttributeData AbilityDefense;
@@ -84,6 +94,14 @@ public:
 	FGameplayAttributeData MoveSpeed;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, MoveSpeed)
 
+	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
+	FGameplayAttributeData AbilityDamage;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityDamage)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
+	FGameplayAttributeData AbilityScaling;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityScaling)
+
 protected:
 	/** Helper function to proportionally adjust the value of an attribute when it's associated max attribute changes. (i.e. When MaxHealth increases, Health increases by an amount that maintains the same percentage as before) */
 	//void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
@@ -94,7 +112,6 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_MaxHealth();
-
 
 	UFUNCTION()
 	virtual void OnRep_HealthRegen();
@@ -110,9 +127,15 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_AttackDamage();
-
+	
 	UFUNCTION()
 	virtual void OnRep_AttackSpeed();
+
+	UFUNCTION()
+	virtual void OnRep_AbilityPower();
+
+	UFUNCTION()
+	virtual void OnRep_ArmourPenetration();
 
 	UFUNCTION()
 	virtual void OnRep_AbilityDefense();
