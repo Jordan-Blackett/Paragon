@@ -50,8 +50,9 @@ public:
 
 	////////////////////////////////////
 	// --- Helper Functions ---
-
-	void GetViewPoint(FVector& CameraLocation, FRotator& CamRotation);
+	FHitResult LinetraceFromCamera(float LineTraceRange);
+	FHitResult LinetraceFromSocket(FName SocketName, float LineTraceRange);
+	FHitResult LinetraceFromSocketOut(FName SocketName, float LineTraceRange, FVector& OutShootDir, FVector& OutOrigin);
 	bool GetIsLocallyControlled();
 	
 	////////////////////////////////////
@@ -250,7 +251,8 @@ protected:
 
 	void FloatingDamageText(float Damage);
 
-	FHitResult Linetrace();
+	void GetViewPoint(FVector& CameraLocation, FRotator& CamRotation);
+	FHitResult Linetrace(FVector StartTrace, FVector EndTrace);
 
 	void SpawnAbilityIndicator(UMaterialInterface* AbilityIndicator);
 	void MoveAbilityIndicator();

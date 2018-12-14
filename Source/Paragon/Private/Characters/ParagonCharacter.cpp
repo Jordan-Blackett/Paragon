@@ -87,7 +87,12 @@ void AParagonCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	InitGameplayAbilities();
+	// Initialize our abilities
+	if (AbilitySystem)
+	{
+		InitGameplayAbilities();
+		AbilitySystem->InitAbilityActorInfo(this, this);
+	}
 
 	if (Role == ROLE_Authority)
 	{
@@ -161,12 +166,12 @@ void AParagonCharacter::PossessedBy(AController * NewController)
 {
 	Super::PossessedBy(NewController);
 
-	// Initialize our abilities
-	if (AbilitySystem)
-	{
-		AbilitySystem->InitAbilityActorInfo(this, this);
-		//AddStartupGameplayAbilities();
-	}
+	//// Initialize our abilities
+	//if (AbilitySystem)
+	//{
+	//	AbilitySystem->InitAbilityActorInfo(this, this);
+	//	//AddStartupGameplayAbilities();
+	//}
 
 	AbilitySystem->RefreshAbilityActorInfo();
 }
@@ -189,8 +194,25 @@ void AParagonCharacter::ActivateAbilityInSlot(int32 Slot)
 {
 	if (AbilitySystem)
 	{
-		AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot]);
+		if (AbilitySystem && AbilitiesSlots.Num() > Slot)
+		{
+			AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot]);
+		}
 	}
+
+	//AbilitySystem->TryActivateAbilityByClass(AbilitySystem->ActiveSlots[Slot]);
+	// Cast ability
+	//if (AbilitySystem && AbilitiesHandles.Num() > Slot)
+	//{
+	//	if (AbilitySystem->TryActivateAbility(AbilitiesHandles[Slot])) {
+	//	} else {
+	//		UE_LOG(LogTemp, Warning, TEXT("Ability Failed"));
+	//	}
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("No Ability In Array"));
+	//}
 }
 
 void AParagonCharacter::StartAbility()
@@ -213,30 +235,20 @@ void AParagonCharacter::AbilitySlot0()
 	{
 		HideAbilityIndicator();
 
+
+		ActivateAbilityInSlot(CurrentActiveAbility);
+		
 		//if (Ability2Animation)
 		//{
 		//	PlayAnimMontage(Ability2Animation);
 		//}
-
-		// Cast ability
-		if (AbilitiesSlots.Num() > CurrentActiveAbility)
-		{
-			if (AbilitySystem->TryActivateAbility(AbilitiesHandles[CurrentActiveAbility])) {
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("Ability Failed"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("No Ability In Array"));
-		}
 
 		bAbilityPressed = false;
 	}
 	else
 	{
 		CurrentActiveAbility = 0;
-		StartAbility();
+		ActivateAbilityInSlot(CurrentActiveAbility);
 	}
 }
 
@@ -364,6 +376,108 @@ void AParagonCharacter::GetViewPoint(FVector & CameraLocation, FRotator & CamRot
 	}
 }
 
+FHitResult AParagonCharacter::LinetraceFromCamera(float LineTraceRange) // TODO
+{
+	FVector CamLoc;
+	FRotator CamRot;
+	GetViewPoint(CamLoc, CamRot);
+
+	FVector ShootDir = CamRot.Vector();
+	FVector Origin = GetMesh()->GetSocketLocation("Gun_LOS"); // TODO 
+
+	const float AdjustRange = LineTraceRange;
+	const FVector StartTrace = Origin;
+	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
+
+	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
+
+	return Linetrace(StartTrace, EndTrace);
+}
+
+FHitResult AParagonCharacter::LinetraceFromSocket(FName SocketName, float LineTraceRange)
+{
+	FVector CamLoc;
+	FRotator CamRot;
+	GetViewPoint(CamLoc, CamRot);
+
+	FVector ShootDir = CamRot.Vector();
+	FVector Origin = GetMesh()->GetSocketLocation(SocketName);
+
+	const float AdjustRange = LineTraceRange;
+	const FVector StartTrace = Origin;
+	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
+
+	DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
+
+	return Linetrace(StartTrace, EndTrace);
+}
+
+FHitResult AParagonCharacter::LinetraceFromSocketOut(FName SocketName, float LineTraceRange, FVector & OutShootDir, FVector & OutOrigin)
+{
+	FVector CamLoc;
+	FRotator CamRot;
+	GetViewPoint(CamLoc, CamRot);
+
+	FVector ShootDir = CamRot.Vector();
+	FVector Origin = GetMesh()->GetSocketLocation(SocketName);
+
+	// Trace from camera to check what's under crosshair
+	const float AdjustRange = LineTraceRange; // Cross point
+	const FVector StartTrace = CamLoc + ShootDir * ((GetActorLocation() - CamLoc) | ShootDir);
+	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
+
+	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Blue, true);
+
+	FHitResult Impact = Linetrace(StartTrace, EndTrace);
+
+	// and adjust directions to hit that actor
+	if (Impact.bBlockingHit)
+	{
+		const FVector AdjustedDir = (Impact.ImpactPoint - Origin).GetSafeNormal();
+		bool bWeaponPenetration = false;
+
+		const float DirectionDot = FVector::DotProduct(AdjustedDir, ShootDir);
+		if (DirectionDot < 0.0f)
+		{
+			// shooting backwards = weapon is penetrating
+			bWeaponPenetration = true;
+		}
+		else if (DirectionDot < 0.5f)
+		{
+			// check for weapon penetration if angle difference is big enough
+			// raycast along weapon mesh to check if there's blocking hit
+
+			FVector MuzzleStartTrace = Origin - GetMesh()->GetSocketRotation(SocketName).Vector() * 150.0f;
+			FVector MuzzleEndTrace = Origin;
+			FHitResult MuzzleImpact = Linetrace(MuzzleStartTrace, MuzzleEndTrace);
+
+			if (MuzzleImpact.bBlockingHit)
+			{
+				bWeaponPenetration = true;
+			}
+		}
+
+		if (bWeaponPenetration)
+		{
+			// spawn at crosshair position
+			Origin = Impact.ImpactPoint - ShootDir * 10.0f;
+		}
+		else
+		{
+			// adjust direction to hit
+			ShootDir = AdjustedDir;
+		}
+	}
+
+	//const FVector StartTrace2 = Origin;
+	//const FVector EndTrace2 = StartTrace + ShootDir * AdjustRange;
+	//DrawDebugLine(GetWorld(), StartTrace2, EndTrace2, FColor::Red, true);
+
+	OutOrigin = Origin;
+	OutShootDir = ShootDir;
+	return Linetrace(StartTrace, EndTrace); // this is pointless remove!
+}
+
 bool AParagonCharacter::GetIsLocallyControlled()
 {
 	return IsLocallyControlled();
@@ -399,22 +513,8 @@ void AParagonCharacter::FloatingDamageText(float Damage)
 	}
 }
 
-FHitResult AParagonCharacter::Linetrace() // Linetracefromsocket(string name)
+FHitResult AParagonCharacter::Linetrace(FVector StartTrace, FVector EndTrace)
 {
-	FVector CamLoc;
-	FRotator CamRot;
-	GetViewPoint(CamLoc, CamRot);
-
-	FVector ShootDir = CamRot.Vector();
-	FVector Origin = GetMesh()->GetSocketLocation("Gun_LOS");
-
-	// Show ability indicator
-	const float AdjustRange = 1000.0f; // range
-	const FVector StartTrace = Origin;
-	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
-
-	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Red, true);
-
 	// Perform trace to retrieve hit info
 	FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(WeaponTrace), true, Instigator);
 	TraceParams.bTraceAsyncScene = true;
@@ -455,7 +555,7 @@ void AParagonCharacter::MoveAbilityIndicator()
 {
 	if (CurrentAbilityDecal != nullptr)
 	{
-		FHitResult HitResult = Linetrace(); //range
+		FHitResult HitResult = LinetraceFromCamera(1000); //range
 		//if(HitResult.bBlockingHit)
 		//{
 		//	DrawDebugPoint(GetWorld(), HitResult.Location, 20.f, FColor::Red, true);
@@ -508,15 +608,15 @@ void AParagonCharacter::HideAbilityIndicator()
 
 void AParagonCharacter::Regen()
 {
-	//// Health Regen
-	//float NewHealth = GetHealth() + GetHealthRegen();
-	//NewHealth = (NewHealth >= GetMaxHealth()) ? GetMaxHealth() : NewHealth;
-	//AttributeSet->SetHealth(NewHealth);
+	// Health Regen
+	float NewHealth = GetHealth() + GetHealthRegen();
+	NewHealth = (NewHealth >= GetMaxHealth()) ? GetMaxHealth() : NewHealth;
+	AttributeSet->SetHealth(NewHealth);
 
-	//// Mana Regen
-	//float NewMana = GetMana() + GetManaRegen();
-	//NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
-	//AttributeSet->SetMana(NewMana);
+	// Mana Regen
+	float NewMana = GetMana() + GetManaRegen();
+	NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
+	AttributeSet->SetMana(NewMana);
 }
 
 // --- Accessor and Mutator ---
@@ -586,5 +686,6 @@ void AParagonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AParagonCharacter, CharacterLevel);
+	DOREPLIFETIME(AParagonCharacter, AbilitiesHandles);
 	DOREPLIFETIME(AParagonCharacter, AbilityPoint);
 }

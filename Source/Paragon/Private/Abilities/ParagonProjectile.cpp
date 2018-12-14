@@ -3,11 +3,10 @@
 #include "ParagonProjectile.h"
 #include "Paragon.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Particles/ParticleSystemComponent.h"
 #include "Components/SphereComponent.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "ParagonExplosionEffect.h"
-
 
 // Sets default values
 AParagonProjectile::AParagonProjectile()
@@ -40,7 +39,7 @@ AParagonProjectile::AParagonProjectile()
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
-	bReplicateMovement = true;
+	//bReplicateMovement = true;
 }
 
 void AParagonProjectile::PostInitializeComponents()
@@ -48,16 +47,16 @@ void AParagonProjectile::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	ProjectileMovementComp->OnProjectileStop.AddDynamic(this, &AParagonProjectile::OnImpact);
-	CollisionComp->MoveIgnoreActors.Add(Cast<AActor>(Instigator)); //Instigator GetOwner()
+	CollisionComp->MoveIgnoreActors.Add(Cast<AActor>(Instigator));
 
-	AParagonBasicAttack_Projectile* OwnerWeapon = Cast<AParagonBasicAttack_Projectile>(GetOwner());
-	if (OwnerWeapon)
-	{
-		OwnerWeapon->ApplyWeaponConfig(WeaponConfig);
-	}
+	//AParagonBasicAttack_Projectile* OwnerWeapon = Cast<AParagonBasicAttack_Projectile>(GetOwner());
+	//if (OwnerWeapon)
+	//{
+	//	OwnerWeapon->ApplyWeaponConfig(WeaponConfig);
+	//}
 
-	SetLifeSpan(WeaponConfig.ProjectileLife);
-	MyController = GetInstigatorController();
+	//SetLifeSpan(WeaponConfig.ProjectileLife);
+	//MyController = GetInstigatorController();
 }
 
 void AParagonProjectile::InitVelocity(FVector& ShootDirection)
@@ -72,9 +71,11 @@ void AParagonProjectile::OnImpact(const FHitResult& HitResult)
 {
 	if (Role == ROLE_Authority && !bExploded)
 	{
-		Explode(HitResult);
-		DisableAndDestroy();
+		// Deal Damage
 	}
+
+	Explode(HitResult);
+	DisableAndDestroy();
 }
 
 void AParagonProjectile::Explode(const FHitResult& Impact)
@@ -86,11 +87,6 @@ void AParagonProjectile::Explode(const FHitResult& Impact)
 
 	// effects and damage origin shouldn't be placed inside mesh at impact point
 	const FVector NudgedImpactLocation = Impact.ImpactPoint + Impact.ImpactNormal * 10.0f;
-
-	if (WeaponConfig.ExplosionDamage > 0 && WeaponConfig.ExplosionRadius > 0 && WeaponConfig.DamageType && Role == ROLE_Authority)
-	{
-		UGameplayStatics::ApplyRadialDamage(this, WeaponConfig.ExplosionDamage, NudgedImpactLocation, WeaponConfig.ExplosionRadius, WeaponConfig.DamageType, TArray<AActor*>(), this, MyController.Get());
-	}
 
 	if (ExplosionTemplate)
 	{
@@ -118,39 +114,4 @@ void AParagonProjectile::DisableAndDestroy()
 
 	// give clients some time to show explosion
 	SetLifeSpan(2.0f);
-}
-
-///CODE_SNIPPET_START: AActor::GetActorLocation AActor::GetActorRotation
-void AParagonProjectile::OnRep_Exploded()
-{
-	//FVector ProjDirection = GetActorForwardVector();
-
-	//const FVector StartTrace = GetActorLocation() - ProjDirection * 200;
-	//const FVector EndTrace = GetActorLocation() + ProjDirection * 150;
-	FHitResult Impact;
-
-	//if (!GetWorld()->LineTraceSingleByChannel(Impact, StartTrace, EndTrace, COLLISION_PROJECTILE, FCollisionQueryParams(SCENE_QUERY_STAT(ProjClient), true, Instigator)))
-	//{
-	//	// failsafe
-	//	Impact.ImpactPoint = GetActorLocation();
-	//	Impact.ImpactNormal = -ProjDirection;
-	//}
-
-	Explode(Impact);
-}
-///CODE_SNIPPET_END
-
-void AParagonProjectile::PostNetReceiveVelocity(const FVector& NewVelocity)
-{
-	if (ProjectileMovementComp)
-	{
-		ProjectileMovementComp->Velocity = NewVelocity;
-	}
-}
-
-void AParagonProjectile::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AParagonProjectile, bExploded);
 }

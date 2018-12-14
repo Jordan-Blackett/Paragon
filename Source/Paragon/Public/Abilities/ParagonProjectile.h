@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "ParagonBasicAttack_Projectile.h"
 #include "ParagonProjectile.generated.h"
 
 class UProjectileMovementComponent;
 class USphereComponent;
+class UParticleSystemComponent;
 class AParagonExplosionEffect;
 
 UCLASS()
@@ -18,7 +18,7 @@ class PARAGON_API AParagonProjectile : public AActor
 
 	/** initial setup */
 	virtual void PostInitializeComponents() override;
-	
+
 	/** movement component */
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 	UProjectileMovementComponent* ProjectileMovementComp;
@@ -29,7 +29,7 @@ class PARAGON_API AParagonProjectile : public AActor
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Projectile)
 	UParticleSystemComponent* ParticleComp;
-
+	
 public:	
 	// Sets default values for this actor's properties
 	AParagonProjectile();
@@ -41,25 +41,25 @@ public:
 	UFUNCTION()
 	void OnImpact(const FHitResult& HitResult);
 
-protected:
+//protected:
 
 	/** effects for explosion */
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
 	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
 
 	/** controller that fired me (cache for damage calculations) */
-	TWeakObjectPtr<AController> MyController;
+	//TWeakObjectPtr<AController> MyController;
 
 	/** projectile data */
-	struct FProjectileWeaponData WeaponConfig;
+	//struct FProjectileWeaponData2 WeaponConfig;
 
 	/** did it explode? */
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_Exploded)
+	//UPROPERTY(Transient, ReplicatedUsing = OnRep_Exploded)
 	bool bExploded;
 
-	/** [client] explosion happened */
-	UFUNCTION()
-	void OnRep_Exploded();
+	///** [client] explosion happened */
+	//UFUNCTION()
+	//void OnRep_Exploded();
 
 	/** trigger explosion */
 	void Explode(const FHitResult& Impact);
@@ -67,9 +67,9 @@ protected:
 	/** shutdown projectile and prepare for destruction */
 	void DisableAndDestroy();
 
-	/** update velocity on client */
-	virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
-
+	///** update velocity on client */
+	//virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
+	
 protected:
 	/** Returns MovementComp subobject **/
 	FORCEINLINE UProjectileMovementComponent* GetMovementComp() const { return ProjectileMovementComp; }
