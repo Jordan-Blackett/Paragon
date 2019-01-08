@@ -20,9 +20,6 @@ class PARAGON_API AParagonCharacter_Gadget : public AParagonCharacter
 public:
 	AParagonCharacter_Gadget();
 
-	UPROPERTY(EditDefaultsOnly, Category = "Ability_2")
-	UAnimMontage* Ability2Animation;
-
 protected:
 	virtual void BeginPlay();
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

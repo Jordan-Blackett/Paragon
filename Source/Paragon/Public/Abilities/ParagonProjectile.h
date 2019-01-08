@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameplayEffectTypes.h"
 #include "ParagonProjectile.generated.h"
 
 class UProjectileMovementComponent;
@@ -41,25 +42,9 @@ public:
 	UFUNCTION()
 	void OnImpact(const FHitResult& HitResult);
 
-//protected:
-
 	/** effects for explosion */
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
 	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
-
-	/** controller that fired me (cache for damage calculations) */
-	//TWeakObjectPtr<AController> MyController;
-
-	/** projectile data */
-	//struct FProjectileWeaponData2 WeaponConfig;
-
-	/** did it explode? */
-	//UPROPERTY(Transient, ReplicatedUsing = OnRep_Exploded)
-	bool bExploded;
-
-	///** [client] explosion happened */
-	//UFUNCTION()
-	//void OnRep_Exploded();
 
 	/** trigger explosion */
 	void Explode(const FHitResult& Impact);
@@ -67,8 +52,15 @@ public:
 	/** shutdown projectile and prepare for destruction */
 	void DisableAndDestroy();
 
-	///** update velocity on client */
-	//virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
+	void SetGameplayEffectSpecs(TArray<FGameplayEffectSpecHandle> GameplayEffectSpecs) { TargetGameplayEffectSpecs = GameplayEffectSpecs; }
+
+private:
+	UPROPERTY()
+	TArray<FGameplayEffectSpecHandle> TargetGameplayEffectSpecs;
+
+	/** did it explode? */
+	UPROPERTY()
+	bool bExploded;
 	
 protected:
 	/** Returns MovementComp subobject **/

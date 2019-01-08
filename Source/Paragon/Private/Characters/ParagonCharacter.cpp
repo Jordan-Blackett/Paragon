@@ -196,7 +196,7 @@ void AParagonCharacter::ActivateAbilityInSlot(int32 Slot)
 	{
 		if (AbilitySystem && AbilitiesSlots.Num() > Slot)
 		{
-			AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot]);
+			AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot], true);
 		}
 	}
 
@@ -235,13 +235,7 @@ void AParagonCharacter::AbilitySlot0()
 	{
 		HideAbilityIndicator();
 
-
 		ActivateAbilityInSlot(CurrentActiveAbility);
-		
-		//if (Ability2Animation)
-		//{
-		//	PlayAnimMontage(Ability2Animation);
-		//}
 
 		bAbilityPressed = false;
 	}

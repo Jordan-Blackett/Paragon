@@ -7,6 +7,8 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "ParagonExplosionEffect.h"
+#include "ParagonCharacter.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AParagonProjectile::AParagonProjectile()
@@ -39,7 +41,6 @@ AParagonProjectile::AParagonProjectile()
 	PrimaryActorTick.TickGroup = TG_PrePhysics;
 	SetRemoteRoleForBackwardsCompat(ROLE_SimulatedProxy);
 	bReplicates = true;
-	//bReplicateMovement = true;
 }
 
 void AParagonProjectile::PostInitializeComponents()
@@ -72,6 +73,20 @@ void AParagonProjectile::OnImpact(const FHitResult& HitResult)
 	if (Role == ROLE_Authority && !bExploded)
 	{
 		// Deal Damage
+		TArray<TEnumAsByte<EObjectTypeQuery>> CollisionType;
+		CollisionType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+		TSubclassOf<AParagonCharacter> ActorFilter;
+		TArray<AActor*> ActorsIgnore;
+		ActorsIgnore.Add(Instigator);
+		TArray<AActor*> OverlappedActors;
+
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), HitResult.Location, 400, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
+		DrawDebugSphere(GetWorld(), HitResult.Location, 400, 24, FColor::Yellow, 5, 1);
+
+		for (AActor* Actor : OverlappedActors)
+		{
+			Cast<AParagonCharacter>(Actor)->TakeDamageEffectSpecs(TargetGameplayEffectSpecs);
+		}
 	}
 
 	Explode(HitResult);
@@ -104,12 +119,6 @@ void AParagonProjectile::Explode(const FHitResult& Impact)
 
 void AParagonProjectile::DisableAndDestroy()
 {
-	//UAudioComponent* ProjAudioComp = FindComponentByClass<UAudioComponent>();
-	//if (ProjAudioComp && ProjAudioComp->IsPlaying())
-	//{
-	//	ProjAudioComp->FadeOut(0.1f, 0.f);
-	//}
-
 	ProjectileMovementComp->StopMovementImmediately();
 
 	// give clients some time to show explosion

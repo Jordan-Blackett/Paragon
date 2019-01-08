@@ -43,7 +43,7 @@ class PARAGON_API UParagonGABasicAttack_Projectile : public UParagonGABasicAttac
 	
 public:
 
-	/** [local] weapon specific fire implementation */
+	/** Weapon specific fire implementation */
 	virtual void FireWeapon() override;
 	
 protected:
@@ -51,12 +51,4 @@ protected:
 	/** weapon config */
 	UPROPERTY(EditDefaultsOnly, Category = Config)
 	FProjectileWeaponData ProjectileConfig;
-
-public:
-
-	/** Spawn projectile on server */
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_FireProjectile(FVector Origin, FVector_NetQuantizeNormal ShootDir);
-	void Server_FireProjectile_Implementation(FVector Origin, FVector_NetQuantizeNormal ShootDir);
-	bool Server_FireProjectile_Validate(FVector Origin, FVector_NetQuantizeNormal ShootDir);
 };
