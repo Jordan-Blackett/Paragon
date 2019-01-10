@@ -79,6 +79,7 @@ AParagonCharacter::AParagonCharacter()
 	AttributeSet = CreateDefaultSubobject<UParagonAttributeSet>(TEXT("AttributeSet"));
 
 	CharacterLevel = 1;
+	Experience = 0;
 	bAbilitiesInitialized = false;
 }
 
@@ -129,6 +130,37 @@ void AParagonCharacter::InitGameplayAbilities()
 		AbilitySystem->InitAbilityActorInfo(this, this);
 
 		bAbilitiesInitialized = true;
+	}
+}
+
+void AParagonCharacter::RemoveStartupGameplayAbilities()
+{
+	check(AbilitySystem);
+
+	if (Role == ROLE_Authority && bAbilitiesInitialized)
+	{
+		// Remove any abilities added from a previous call
+		TArray<FGameplayAbilitySpecHandle> AbilitiesToRemove;
+		for (const FGameplayAbilitySpec& Spec : AbilitySystem->GetActivatableAbilities())
+		{
+			if ((Spec.SourceObject == this) && AbilitiesSlots.Contains(Spec.Ability->GetClass()))
+			{
+				AbilitiesToRemove.Add(Spec.Handle);
+			}
+		}
+
+		// Do in two passes so the removal happens after we have the full list
+		for (int32 i = 0; i < AbilitiesToRemove.Num(); i++)
+		{
+			AbilitySystem->ClearAbility(AbilitiesToRemove[i]);
+		}
+
+		// Remove all of the passive gameplay effects that were applied by this character
+		FGameplayEffectQuery Query;
+		Query.EffectSource = this;
+		AbilitySystem->RemoveActiveEffects(Query);
+
+		bAbilitiesInitialized = false;
 	}
 }
 
@@ -477,6 +509,40 @@ bool AParagonCharacter::GetIsLocallyControlled()
 	return IsLocallyControlled();
 }
 
+void AParagonCharacter::GiveExperience(float Exp)
+{
+	float NewExperience = Experience + Exp;
+	if (!ExperienceCurveTable.IsNull())
+	{
+		float NextLevelExperience = 0;
+		ExperienceCurveTable.Eval((CharacterLevel + 1), &NextLevelExperience, "");
+
+		if (NewExperience >= NextLevelExperience)
+		{
+			Experience = NewExperience - NextLevelExperience;
+
+			// Level up!
+			LevelUp(1);
+		} else {
+			Experience = NewExperience;
+		}
+	}
+}
+
+void AParagonCharacter::LevelUp(int Levels)
+{
+	int NewLevel = CharacterLevel + Levels;
+	if (NewLevel > MaxLevel)
+		NewLevel = MaxLevel;
+	else if(NewLevel < 1)
+		NewLevel = 1;
+
+	// Our level changed so we need to refresh abilities
+	RemoveStartupGameplayAbilities();
+	CharacterLevel = NewLevel;
+	InitGameplayAbilities();
+}
+
 void AParagonCharacter::FloatingDamageText(float Damage)
 {
 	if (FloatingDamageTextWidgetTemplate != nullptr)
@@ -611,13 +677,20 @@ void AParagonCharacter::Regen()
 	float NewMana = GetMana() + GetManaRegen();
 	NewMana = (NewMana >= GetMaxMana()) ? GetMaxMana() : NewMana;
 	AttributeSet->SetMana(NewMana);
+
+	GiveExperience(40);
 }
 
 // --- Accessor and Mutator ---
 
 float AParagonCharacter::GetHealth() const
 {
-	return AttributeSet->GetHealth();;
+	return AttributeSet->GetHealth();
+}
+
+void AParagonCharacter::SetHealth(float NewHealth)
+{
+	AttributeSet->SetHealth(NewHealth);
 }
 
 float AParagonCharacter::GetMaxHealth() const
@@ -675,11 +748,26 @@ int32 AParagonCharacter::GetCharacterLevel() const
 	return CharacterLevel;
 }
 
+float AParagonCharacter::GetCharacterExperience() const
+{
+	return Experience;
+}
+
+float AParagonCharacter::GetNextLevelExperience() const
+{
+	float NextLevelExperience = 0;
+	if (!ExperienceCurveTable.IsNull())
+	{
+		ExperienceCurveTable.Eval((CharacterLevel+1), &NextLevelExperience, "");
+	}
+	return NextLevelExperience;
+}
+
 void AParagonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AParagonCharacter, CharacterLevel);
 	//DOREPLIFETIME(AParagonCharacter, AbilitiesHandles);
-	DOREPLIFETIME(AParagonCharacter, AbilityPoint);
+	DOREPLIFETIME_CONDITION(AParagonCharacter, AbilityPoint, COND_OwnerOnly);
 }

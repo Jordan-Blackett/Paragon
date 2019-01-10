@@ -43,6 +43,12 @@ AParagonProjectile::AParagonProjectile()
 	bReplicates = true;
 }
 
+void AParagonProjectile::Init(float Lifetime, float NewExplosionRadius)
+{
+	SetLifeSpan(Lifetime);
+	ExplosionRadius = NewExplosionRadius;
+}
+
 void AParagonProjectile::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -80,8 +86,8 @@ void AParagonProjectile::OnImpact(const FHitResult& HitResult)
 		ActorsIgnore.Add(Instigator);
 		TArray<AActor*> OverlappedActors;
 
-		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), HitResult.Location, 400, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
-		DrawDebugSphere(GetWorld(), HitResult.Location, 400, 24, FColor::Yellow, 5, 1);
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), HitResult.Location, ExplosionRadius, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
+		DrawDebugSphere(GetWorld(), HitResult.Location, ExplosionRadius, 24, FColor::Yellow, 5, 1);
 
 		for (AActor* Actor : OverlappedActors)
 		{

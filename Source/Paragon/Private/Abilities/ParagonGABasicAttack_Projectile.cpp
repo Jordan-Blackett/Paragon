@@ -20,14 +20,12 @@ void UParagonGABasicAttack_Projectile::FireWeapon()
 		Projectile->Instigator = Cast<APawn>(GetAvatarActorFromActorInfo());
 		Projectile->SetOwner(GetAvatarActorFromActorInfo());
 		Projectile->InitVelocity(ShootDir);
-
-		//GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo()
-		//const UGameplayEffect* GameplayCue = Cast<UGameplayEffect>(WeaponConfig.HitGameplayCueEffects[0]);
+		Projectile->Init(ProjectileConfig.ProjectileLife, ProjectileConfig.ExplosionRadius);
 
 		if(WeaponConfig.HitGameplayEffects.Num() > 0)
 		{
 			TArray<FGameplayEffectSpecHandle> SpecHandle;
-			SpecHandle.Add(MakeOutgoingGameplayEffectSpec(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), WeaponConfig.HitGameplayEffects[0], 0));
+			SpecHandle.Add(MakeOutgoingGameplayEffectSpec(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), WeaponConfig.HitGameplayEffects[0], GetAbilityLevel()));
 			Projectile->SetGameplayEffectSpecs(SpecHandle);
 		}
 

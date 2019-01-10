@@ -19,16 +19,31 @@ UParagonAttributeSet::UParagonAttributeSet()
 	, AbilityDefense(1.f)
 	, BaseDefense(1.f)
 	, MoveSpeed(1.0f)
+	, Level(1.0f)
+	, Experience(0.0f)
 	, AbilityDamage(0.0f)
 	, AbilityScaling (0.0f)
 {
 }
 
+void UParagonAttributeSet::PreAttributeChange(const FGameplayAttribute & Attribute, float & NewValue)
+{
+	// This is called whenever attributes change, so for max health/mana we want to scale the current totals to match
+	Super::PreAttributeChange(Attribute, NewValue);
+
+	if (Attribute == GetMaxHealthAttribute())
+	{
+		AdjustAttributeForMaxChange(Health, MaxHealth, NewValue, GetHealthAttribute());
+	}
+	else if (Attribute == GetMaxManaAttribute())
+	{
+		AdjustAttributeForMaxChange(Mana, MaxMana, NewValue, GetManaAttribute());
+	}
+}
+
 void UParagonAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData & Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-
-	
 
 	//AActor* TargetActor = nullptr;
 	//AController* TargetController = nullptr;
@@ -62,6 +77,20 @@ void UParagonAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCal
 	}
 }
 
+void UParagonAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
+{
+	UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent();
+	const float CurrentMaxValue = MaxAttribute.GetCurrentValue();
+	if (!FMath::IsNearlyEqual(CurrentMaxValue, NewMaxValue) && AbilityComp)
+	{
+		// Change current value to maintain the current Val / Max percent
+		const float CurrentValue = AffectedAttribute.GetCurrentValue();
+		float NewDelta = (CurrentMaxValue > 0.f) ? (CurrentValue * NewMaxValue / CurrentMaxValue) - CurrentValue : NewMaxValue;
+
+		AbilityComp->ApplyModToAttributeUnsafe(AffectedAttributeProperty, EGameplayModOp::Additive, NewDelta);
+	}
+}
+
 void UParagonAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -79,6 +108,8 @@ void UParagonAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(UParagonAttributeSet, AbilityDefense);
 	DOREPLIFETIME(UParagonAttributeSet, BaseDefense);
 	DOREPLIFETIME(UParagonAttributeSet, MoveSpeed);
+	DOREPLIFETIME(UParagonAttributeSet, Level);
+	DOREPLIFETIME(UParagonAttributeSet, Experience); //COND_OwnerOnly
 }
 
 void UParagonAttributeSet::OnRep_Health()
@@ -144,4 +175,14 @@ void UParagonAttributeSet::OnRep_BaseDefense()
 void UParagonAttributeSet::OnRep_MoveSpeed()
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, MoveSpeed);
+}
+
+void UParagonAttributeSet::OnRep_Level()
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, Level);
+}
+
+void UParagonAttributeSet::OnRep_Experience()
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, Experience);
 }

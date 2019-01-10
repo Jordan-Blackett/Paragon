@@ -25,7 +25,7 @@ class PARAGON_API UParagonAttributeSet : public UAttributeSet
 public:
 	// Constructor and overrides
 	UParagonAttributeSet();
-	//virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -94,6 +94,14 @@ public:
 	FGameplayAttributeData MoveSpeed;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, MoveSpeed)
 
+	UPROPERTY(BlueprintReadOnly, Category = "Level", ReplicatedUsing = OnRep_Level)
+	FGameplayAttributeData Level;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, Level)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Level", ReplicatedUsing = OnRep_Experience)
+	FGameplayAttributeData Experience;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, Experience)
+
 	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
 	FGameplayAttributeData AbilityDamage;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityDamage)
@@ -102,9 +110,10 @@ public:
 	FGameplayAttributeData AbilityScaling;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityScaling)
 
+
 protected:
 	/** Helper function to proportionally adjust the value of an attribute when it's associated max attribute changes. (i.e. When MaxHealth increases, Health increases by an amount that maintains the same percentage as before) */
-	//void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
+	void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
 
 	// These OnRep functions exist to make sure that the ability system internal representations are synchronized properly during replication
 	UFUNCTION()
@@ -145,5 +154,11 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_MoveSpeed();
-	
+
+	UFUNCTION()
+	virtual void OnRep_Level();
+
+	UFUNCTION()
+	virtual void OnRep_Experience();
+
 };

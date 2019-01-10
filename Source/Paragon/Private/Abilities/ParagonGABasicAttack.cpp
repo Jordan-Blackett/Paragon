@@ -26,13 +26,10 @@ void UParagonGABasicAttack::HandleFiring()
 	// GameplayCue
 	if (WeaponConfig.HitGameplayCueEffects.Num() > 0)
 	{
-		//const UGameplayEffect* GameplayCue = Cast<UGameplayEffect>(WeaponConfig.HitGameplayCueEffects[0]);
-		//ApplyGameplayEffectToOwner(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), GameplayCue, 0);
+		TArray<FGameplayEffectSpecHandle> FireEffectSpecHandle;
+		FireEffectSpecHandle.Add(MakeOutgoingGameplayEffectSpec(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), WeaponConfig.HitGameplayCueEffects[0], 0));
 
-		TArray<FGameplayEffectSpecHandle> SpecHandle2;
-		SpecHandle2.Add(MakeOutgoingGameplayEffectSpec(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfo(), WeaponConfig.HitGameplayCueEffects[0], 0));
-
-		for (const FGameplayEffectSpecHandle& SpecHandle : SpecHandle2)
+		for (const FGameplayEffectSpecHandle& SpecHandle : FireEffectSpecHandle)
 		{
 			if (SpecHandle.IsValid())
 			{

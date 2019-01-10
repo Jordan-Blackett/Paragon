@@ -54,6 +54,12 @@ public:
 	FHitResult LinetraceFromSocket(FName SocketName, float LineTraceRange);
 	FHitResult LinetraceFromSocketOut(FName SocketName, float LineTraceRange, FVector& OutShootDir, FVector& OutOrigin);
 	bool GetIsLocallyControlled();
+
+	UFUNCTION()
+	void GiveExperience(float Exp);
+
+	UFUNCTION()
+	void LevelUp(int Levels);
 	
 	////////////////////////////////////
 	// --- Accessors And Mutators ---
@@ -62,6 +68,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetHealth() const;
+
+	UFUNCTION()
+	void SetHealth(float NewHealth);
 
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	float GetMaxHealth() const;
@@ -105,6 +114,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Stats")
 	int32 GetCharacterLevel() const;
 
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetCharacterExperience() const;
+
+	UFUNCTION(BlueprintPure, Category = "Stats")
+	float GetNextLevelExperience() const;
+
 	/** Modifies the character level, this may change abilities. Returns true on success */
 	//UFUNCTION(BlueprintCallable, Category = "Stats")
 	//bool SetCharacterLevel(int32 NewLevel);
@@ -118,6 +133,15 @@ protected:
 	/** The level of this character, should not be modified directly once it has already spawned */
 	UPROPERTY(EditAnywhere, Replicated, Category = Abilities)
 	int32 CharacterLevel;
+
+	UPROPERTY(EditAnywhere, Replicated, Category = Abilities)
+	float Experience;
+
+	UPROPERTY()
+	int MaxLevel = 20;
+
+	UPROPERTY(EditDefaultsOnly, Category = Curve)
+	FCurveTableRowHandle ExperienceCurveTable;
 
 	////////////////////////////////////
 	// --- Ability System ---
@@ -211,6 +235,9 @@ protected:
 
 	/** Apply the startup gameplay abilities and effects */
 	void InitGameplayAbilities();
+
+	/** Attempts to remove any startup gameplay abilities */
+	void RemoveStartupGameplayAbilities();
 
 	// Called from RPGAttributeSet, these call BP events above
 	//virtual void HandleDamage(float DamageAmount, const FHitResult& HitInfo, const struct FGameplayTagContainer& DamageTags, ARPGCharacterBase* InstigatorCharacter, AActor* DamageCauser);

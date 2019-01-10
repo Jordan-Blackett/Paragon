@@ -35,6 +35,9 @@ public:
 	// Sets default values for this actor's properties
 	AParagonProjectile();
 
+	/** setup stats */
+	void Init(float Lifetime, float NewExplosionRadius);
+
 	/** setup velocity */
 	void InitVelocity(FVector& ShootDirection);
 
@@ -57,6 +60,8 @@ public:
 private:
 	UPROPERTY()
 	TArray<FGameplayEffectSpecHandle> TargetGameplayEffectSpecs;
+
+	int ExplosionRadius;
 
 	/** did it explode? */
 	UPROPERTY()
