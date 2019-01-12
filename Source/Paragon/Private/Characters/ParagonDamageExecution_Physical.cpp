@@ -1,20 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "ParagonDamageExecution.h"
+#include "ParagonDamageExecution_Physical.h"
 #include "AbilitySystemComponent.h"
 #include "ParagonAttributeSet.h"
 #include "ParagonCharacter.h"
 
-struct ParagonDamageStatics
+struct ParagonDamageStaticsPhysical
 {
 	DECLARE_ATTRIBUTE_CAPTUREDEF(AbilityDamageType);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(AbilityDamage);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(AbilityPower);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(AbilityScaling);
 	DECLARE_ATTRIBUTE_CAPTUREDEF(ArmourPenetration);
-	DECLARE_ATTRIBUTE_CAPTUREDEF(AbilityDefense);
+	DECLARE_ATTRIBUTE_CAPTUREDEF(BaseDefense);
 
-	ParagonDamageStatics()
+	ParagonDamageStaticsPhysical()
 	{
 		// Snapshotted
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UParagonAttributeSet, AbilityDamageType, Source, true);
@@ -24,17 +24,17 @@ struct ParagonDamageStatics
 		DEFINE_ATTRIBUTE_CAPTUREDEF(UParagonAttributeSet, ArmourPenetration, Source, true);
 
 		// Not snapshotted
-		DEFINE_ATTRIBUTE_CAPTUREDEF(UParagonAttributeSet, AbilityDefense, Target, false);
+		DEFINE_ATTRIBUTE_CAPTUREDEF(UParagonAttributeSet, BaseDefense, Target, false);
 	}
 };
 
-static const ParagonDamageStatics& DamageStatics()
+static const ParagonDamageStaticsPhysical& DamageStatics()
 {
-	static ParagonDamageStatics DmgStatics;
+	static ParagonDamageStaticsPhysical DmgStatics;
 	return DmgStatics;
 }
 
-UParagonDamageExecution::UParagonDamageExecution()
+UParagonDamageExecution_Physical::UParagonDamageExecution_Physical()
 {
 	RelevantAttributesToCapture.Add(DamageStatics().AbilityDamageTypeDef);
 	InvalidScopedModifierAttributes.Add(DamageStatics().AbilityDamageTypeDef);
@@ -44,11 +44,11 @@ UParagonDamageExecution::UParagonDamageExecution()
 	RelevantAttributesToCapture.Add(DamageStatics().AbilityScalingDef);
 	RelevantAttributesToCapture.Add(DamageStatics().ArmourPenetrationDef);
 	InvalidScopedModifierAttributes.Add(DamageStatics().ArmourPenetrationDef);
-	RelevantAttributesToCapture.Add(DamageStatics().AbilityDefenseDef);
-	InvalidScopedModifierAttributes.Add(DamageStatics().AbilityDefenseDef);
+	RelevantAttributesToCapture.Add(DamageStatics().BaseDefenseDef);
+	InvalidScopedModifierAttributes.Add(DamageStatics().BaseDefenseDef);
 }
 
-void UParagonDamageExecution::Execute_Implementation(const FGameplayEffectCustomExecutionParameters & ExecutionParams, OUT FGameplayEffectCustomExecutionOutput & OutExecutionOutput) const
+void UParagonDamageExecution_Physical::Execute_Implementation(const FGameplayEffectCustomExecutionParameters & ExecutionParams, OUT FGameplayEffectCustomExecutionOutput & OutExecutionOutput) const
 {
 	UAbilitySystemComponent* TargetAbilitySystemComponent = ExecutionParams.GetTargetAbilitySystemComponent();
 	UAbilitySystemComponent* SourceAbilitySystemComponent = ExecutionParams.GetSourceAbilitySystemComponent();
@@ -72,13 +72,13 @@ void UParagonDamageExecution::Execute_Implementation(const FGameplayEffectCustom
 	// Damage Reduction = (Ability Defense - armor penetration) / (100 + (Ability Defense - armor penetration) + 10 * (Hero Level - 1))
 	// --------------------------------------
 
-	float AbilityDefense = 0.f;
-	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().AbilityDefenseDef, EvaluationParameters, AbilityDefense);
+	float PhysicalDefense = 0.f;
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().BaseDefenseDef, EvaluationParameters, PhysicalDefense);
 	float ArmourPenetration = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageStatics().ArmourPenetrationDef, EvaluationParameters, ArmourPenetration);
 	float HeroLevel = Cast<AParagonCharacter>(TargetActor)->GetCharacterLevel();
 
-	float DamageReduction = (AbilityDefense - ArmourPenetration) / (100 + (AbilityDefense - ArmourPenetration) + (10 * (HeroLevel - 1)));
+	float DamageReduction = (PhysicalDefense - ArmourPenetration) / (100 + (PhysicalDefense - ArmourPenetration) + (10 * (HeroLevel - 1)));
 	DamageReduction *= 100;
 
 	float AbilityDamage = 0.f;
@@ -91,7 +91,7 @@ void UParagonDamageExecution::Execute_Implementation(const FGameplayEffectCustom
 	float Damage = AbilityDamage + (AbilityPower * AbilityScaling);
 	float DamageDone = Damage * (100 / (100 + (DamageReduction)));
 
-	float DamageType = 0.f;
+	float DamageType = 1.f;
 
 	if (DamageDone > 0.f)
 	{
@@ -99,3 +99,7 @@ void UParagonDamageExecution::Execute_Implementation(const FGameplayEffectCustom
 		OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(DamageStatics().AbilityDamageTypeProperty, EGameplayModOp::Override, DamageType));
 	}
 }
+
+
+
+

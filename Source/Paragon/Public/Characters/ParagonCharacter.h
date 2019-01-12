@@ -43,6 +43,12 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	//virtual void OnRep_Controller() override;
 
+	// Called from RPGAttributeSet
+	virtual void HandleDamage(float DamageAmount, const FHitResult& HitInfo, const struct FGameplayTagContainer& DamageTags, AParagonCharacter* InstigatorCharacter, AActor* DamageCauser, bool DamageType);
+	virtual void HandleHealthChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
+	virtual void HandleManaChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
+	virtual void HandleMoveSpeedChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
+
 	////////////////////////////////////
 	// --- Functions ---
 
@@ -239,12 +245,6 @@ protected:
 	/** Attempts to remove any startup gameplay abilities */
 	void RemoveStartupGameplayAbilities();
 
-	// Called from RPGAttributeSet, these call BP events above
-	//virtual void HandleDamage(float DamageAmount, const FHitResult& HitInfo, const struct FGameplayTagContainer& DamageTags, ARPGCharacterBase* InstigatorCharacter, AActor* DamageCauser);
-	//virtual void HandleHealthChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
-	//virtual void HandleManaChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
-	//virtual void HandleMoveSpeedChanged(float DeltaValue, const struct FGameplayTagContainer& EventTags);
-
 	// Friended to allow access to handle functions above
 	//friend URPGAttributeSet;
 
@@ -276,7 +276,7 @@ protected:
 	////////////////////////////////////
 	// --- Helper Functions ---
 
-	void FloatingDamageText(float Damage);
+	void FloatingDamageText(float Damage, bool DamageType);
 
 	void GetViewPoint(FVector& CameraLocation, FRotator& CamRotation);
 	FHitResult Linetrace(FVector StartTrace, FVector EndTrace);

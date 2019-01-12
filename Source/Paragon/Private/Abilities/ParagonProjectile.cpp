@@ -87,7 +87,7 @@ void AParagonProjectile::OnImpact(const FHitResult& HitResult)
 		TArray<AActor*> OverlappedActors;
 
 		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), HitResult.Location, ExplosionRadius, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
-		DrawDebugSphere(GetWorld(), HitResult.Location, ExplosionRadius, 24, FColor::Yellow, 5, 1);
+		//DrawDebugSphere(GetWorld(), HitResult.Location, ExplosionRadius, 24, FColor::Yellow, 5, 1);
 
 		for (AActor* Actor : OverlappedActors)
 		{

@@ -94,17 +94,13 @@ public:
 	FGameplayAttributeData MoveSpeed;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, MoveSpeed)
 
-	UPROPERTY(BlueprintReadOnly, Category = "Level", ReplicatedUsing = OnRep_Level)
-	FGameplayAttributeData Level;
-	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, Level)
-
-	UPROPERTY(BlueprintReadOnly, Category = "Level", ReplicatedUsing = OnRep_Experience)
-	FGameplayAttributeData Experience;
-	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, Experience)
-
 	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
 	FGameplayAttributeData AbilityDamage;
 	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityDamage)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
+	FGameplayAttributeData AbilityDamageType;
+	ATTRIBUTE_ACCESSORS(UParagonAttributeSet, AbilityDamageType)
 
 	UPROPERTY(BlueprintReadOnly, Category = "Damage", meta = (HideFromLevelInfos))
 	FGameplayAttributeData AbilityScaling;
@@ -154,11 +150,5 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_MoveSpeed();
-
-	UFUNCTION()
-	virtual void OnRep_Level();
-
-	UFUNCTION()
-	virtual void OnRep_Experience();
 
 };

@@ -164,6 +164,24 @@ void AParagonCharacter::RemoveStartupGameplayAbilities()
 	}
 }
 
+void AParagonCharacter::HandleDamage(float DamageAmount, const FHitResult & HitInfo, const FGameplayTagContainer & DamageTags, AParagonCharacter * InstigatorCharacter, AActor * DamageCauser, bool DamageType)
+{
+	FloatingDamageText(DamageAmount, DamageType);
+}
+
+void AParagonCharacter::HandleHealthChanged(float DeltaValue, const FGameplayTagContainer & EventTags)
+{
+
+}
+
+void AParagonCharacter::HandleManaChanged(float DeltaValue, const FGameplayTagContainer & EventTags)
+{
+}
+
+void AParagonCharacter::HandleMoveSpeedChanged(float DeltaValue, const FGameplayTagContainer & EventTags)
+{
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
 
@@ -543,13 +561,14 @@ void AParagonCharacter::LevelUp(int Levels)
 	InitGameplayAbilities();
 }
 
-void AParagonCharacter::FloatingDamageText(float Damage)
+void AParagonCharacter::FloatingDamageText(float Damage, bool DamageType)
 {
 	if (FloatingDamageTextWidgetTemplate != nullptr)
 	{
 		UParagonWidget_FloatingDamageText* FloatingText = CreateWidget<UParagonWidget_FloatingDamageText>(GetWorld(), FloatingDamageTextWidgetTemplate);
 		if (FloatingText) {
-			FloatingText->SetDamageValue(Damage);
+			FloatingText->SetDamageValue(FMath::RoundToInt(Damage));
+			FloatingText->DamageType(DamageType);
 
 			// Get hit position to screen
 			APlayerController* PlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());

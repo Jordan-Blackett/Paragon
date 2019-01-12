@@ -34,8 +34,7 @@ float AParagonTargetDummy::TakeDamage(float Damage, struct FDamageEvent const& D
 	//AbilitySystem->appl
 	//SetCurrentHealth(GetCurrentHealth());
 
-	// Locally 
-	FloatingDamageText(Damage);
+
 
 	return health;
 }

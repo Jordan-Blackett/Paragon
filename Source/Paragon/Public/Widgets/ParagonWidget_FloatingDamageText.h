@@ -22,6 +22,9 @@ public:
 	void SetDamageValue(float Damage);
 
 	UFUNCTION(BlueprintImplementableEvent)
+	void DamageType(bool DamageType);
+
+	UFUNCTION(BlueprintImplementableEvent)
 	void SetInitialScreenLocation(FVector2D ScreenLocation);
 
 protected:
