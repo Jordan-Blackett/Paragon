@@ -4,6 +4,8 @@
 #include "Net/UnrealNetwork.h"
 #include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
+#include "ParagonCharacter.h"
+#include "GameFramework/Controller.h"
 
 UParagonAttributeSet::UParagonAttributeSet()
 	: Health(1.f)
@@ -19,9 +21,8 @@ UParagonAttributeSet::UParagonAttributeSet()
 	, AbilityDefense(1.f)
 	, BaseDefense(1.f)
 	, MoveSpeed(1.0f)
-	, Level(1.0f)
-	, Experience(0.0f)
 	, AbilityDamage(0.0f)
+	, AbilityDamageType(0.0f)
 	, AbilityScaling (0.0f)
 {
 }
@@ -45,17 +46,65 @@ void UParagonAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCal
 {
 	Super::PostGameplayEffectExecute(Data);
 
-	//AActor* TargetActor = nullptr;
-	//AController* TargetController = nullptr;
-	////ARPGCharacterBase* TargetCharacter = nullptr;
+	FGameplayEffectContextHandle Context = Data.EffectSpec.GetContext();
+	UAbilitySystemComponent* Source = Context.GetOriginalInstigatorAbilitySystemComponent();
+	const FGameplayTagContainer& SourceTags = *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
 
-	//TargetActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
-	////TargetCharacter = Cast<ARPGCharacterBase>(TargetActor);
-
-	UE_LOG(LogTemp, Warning, TEXT("MyCharacter's Health is %f"), GetAttackDamage());
-
-	if (Data.EvaluatedData.Attribute == GetAbilityDamageAttribute())
+	// Get the Target actor, which should be our owner
+	AActor* TargetActor = nullptr;
+	AController* TargetController = nullptr;
+	AParagonCharacter* TargetCharacter = nullptr;
+	if (Data.Target.AbilityActorInfo.IsValid() && Data.Target.AbilityActorInfo->AvatarActor.IsValid())
 	{
+		//UE_LOG(LogTemp, Log, TEXT("Your message11111111111111111111"));
+		TargetActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
+		TargetController = Data.Target.AbilityActorInfo->PlayerController.Get();
+		TargetCharacter = Cast<AParagonCharacter>(TargetActor);
+	}
+
+	if (Data.EvaluatedData.Attribute == GetAbilityDamageTypeAttribute())
+	{
+		// Get the Source actor
+		AActor* SourceActor = nullptr;
+		AController* SourceController = nullptr;
+		AParagonCharacter* SourceCharacter = nullptr;
+		if (Source && Source->AbilityActorInfo.IsValid() && Source->AbilityActorInfo->AvatarActor.IsValid())
+		{
+			SourceActor = Source->AbilityActorInfo->AvatarActor.Get();
+			SourceController = Source->AbilityActorInfo->PlayerController.Get();
+			if (SourceController == nullptr && SourceActor != nullptr)
+			{
+				if (APawn* Pawn = Cast<APawn>(SourceActor))
+				{
+					SourceController = Pawn->GetController();
+				}
+			}
+
+			// Use the controller to find the source pawn
+			if (SourceController)
+			{
+				SourceCharacter = Cast<AParagonCharacter>(SourceController->GetPawn());
+			}
+			else
+			{
+				SourceCharacter = Cast<AParagonCharacter>(SourceActor);
+			}
+
+			// Set the causer actor based on context if it's set
+			if (Context.GetEffectCauser())
+			{
+				SourceActor = Context.GetEffectCauser();
+			}
+		}
+
+		// Try to extract a hit result
+		FHitResult HitResult;
+		if (Context.GetHitResult())
+		{
+			HitResult = *Context.GetHitResult();
+		}
+
+		// Store a local copy of the amount of damage done and clear the damage attribute
 		const float LocalDamageDone = GetAbilityDamage();
 		SetAbilityDamage(0.f);
 
@@ -65,14 +114,16 @@ void UParagonAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCal
 			const float OldHealth = GetHealth();
 			SetHealth(FMath::Clamp(OldHealth - LocalDamageDone, 0.0f, GetMaxHealth()));
 
-			//if (TargetCharacter)
-			//{
-			//	// This is proper damage
-			//	TargetCharacter->HandleDamage(LocalDamageDone, HitResult, SourceTags, SourceCharacter, SourceActor);
+			if (TargetCharacter)
+			{
+				bool DamageType = GetAbilityDamageType();
 
-			//	// Call for all health changes
-			//	TargetCharacter->HandleHealthChanged(-LocalDamageDone, SourceTags);
-			//}
+				// This is proper damage
+				TargetCharacter->HandleDamage(LocalDamageDone, HitResult, SourceTags, SourceCharacter, SourceActor, DamageType);
+
+				// Call for all health changes
+				TargetCharacter->HandleHealthChanged(-LocalDamageDone, SourceTags);
+			}
 		}
 	}
 }
@@ -108,8 +159,6 @@ void UParagonAttributeSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(UParagonAttributeSet, AbilityDefense);
 	DOREPLIFETIME(UParagonAttributeSet, BaseDefense);
 	DOREPLIFETIME(UParagonAttributeSet, MoveSpeed);
-	DOREPLIFETIME(UParagonAttributeSet, Level);
-	DOREPLIFETIME(UParagonAttributeSet, Experience); //COND_OwnerOnly
 }
 
 void UParagonAttributeSet::OnRep_Health()
@@ -175,14 +224,4 @@ void UParagonAttributeSet::OnRep_BaseDefense()
 void UParagonAttributeSet::OnRep_MoveSpeed()
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, MoveSpeed);
-}
-
-void UParagonAttributeSet::OnRep_Level()
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, Level);
-}
-
-void UParagonAttributeSet::OnRep_Experience()
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(UParagonAttributeSet, Experience);
 }
