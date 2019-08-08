@@ -26,6 +26,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayAbilitySpec.h"
+#include "ParagonDebugConsoleVariables.h"
+
+extern TAutoConsoleVariable<int32> CVarDebugBasicAttack;
 
 //////////////////////////////////////////////////////////////////////////
 // AParagonCharacter
@@ -469,8 +472,12 @@ FHitResult AParagonCharacter::LinetraceFromSocketOut(FName SocketName, float Lin
 	const float AdjustRange = LineTraceRange; // Cross point
 	const FVector StartTrace = CamLoc + ShootDir * ((GetActorLocation() - CamLoc) | ShootDir);
 	const FVector EndTrace = StartTrace + ShootDir * AdjustRange;
-
-	//DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Blue, true);
+	
+	int32 Debug = CVarDebugBasicAttack.GetValueOnGameThread();
+	if (Debug)
+	{
+		DrawDebugLine(GetWorld(), StartTrace, EndTrace, FColor::Green, true);
+	}
 
 	FHitResult Impact = Linetrace(StartTrace, EndTrace);
 
@@ -513,9 +520,12 @@ FHitResult AParagonCharacter::LinetraceFromSocketOut(FName SocketName, float Lin
 		}
 	}
 
-	//const FVector StartTrace2 = Origin;
-	//const FVector EndTrace2 = StartTrace + ShootDir * AdjustRange;
-	//DrawDebugLine(GetWorld(), StartTrace2, EndTrace2, FColor::Red, true);
+	if (Debug)
+	{
+		const FVector StartTrace2 = Origin;
+		const FVector EndTrace2 = StartTrace + ShootDir * AdjustRange;
+		DrawDebugLine(GetWorld(), StartTrace2, EndTrace2, FColor::Yellow, true);
+	}
 
 	OutOrigin = Origin;
 	OutShootDir = ShootDir;

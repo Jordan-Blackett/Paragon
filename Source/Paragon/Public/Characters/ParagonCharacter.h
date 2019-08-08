@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "ParagonAttributeSet.h"
+#include "Abilities/ParagonGABasicAttack.h"
 #include "ParagonCharacter.generated.h"
 
 UCLASS(config=Game)

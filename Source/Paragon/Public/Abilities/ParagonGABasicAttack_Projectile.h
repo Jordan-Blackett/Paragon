@@ -11,24 +11,23 @@ struct FProjectileWeaponData
 {
 	GENERATED_USTRUCT_BODY()
 
-	/** projectile class */
+	/** Projectile class */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AParagonProjectile> ProjectileClass;
 
-	/** life time */
+	/** Life time */
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
-	float ProjectileLife;
+	float ProjectileRange;
 
-	/** radius of damage */
+	/** Radius of damage */
 	UPROPERTY(EditDefaultsOnly, Category = WeaponStat)
 	float ExplosionRadius;
 
-	/** defaults */
+	/** Defaults */
 	FProjectileWeaponData()
 	{
 		ProjectileClass = NULL;
-		//TargetGameplayEffectSpecs = NULL;
-		ProjectileLife = 5.0f;
+		ProjectileRange = 5.0f;
 		ExplosionRadius = 100.0f;
 	}
 };

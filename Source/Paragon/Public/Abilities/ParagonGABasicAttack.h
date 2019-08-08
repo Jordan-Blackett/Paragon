@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+#include "ParagonDebugConsoleVariables.h"
 #include "ParagonGABasicAttack.generated.h"
+
+extern TAutoConsoleVariable<int32> CVarDebugBasicAttack;
 
 USTRUCT()
 struct FWeaponData

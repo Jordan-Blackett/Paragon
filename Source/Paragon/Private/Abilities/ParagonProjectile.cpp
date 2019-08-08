@@ -9,6 +9,9 @@
 #include "ParagonExplosionEffect.h"
 #include "ParagonCharacter.h"
 #include "DrawDebugHelpers.h"
+#include "ParagonDebugConsoleVariables.h"
+
+extern TAutoConsoleVariable<int32> CVarDebugBasicAttack;
 
 // Sets default values
 AParagonProjectile::AParagonProjectile()
@@ -87,7 +90,12 @@ void AParagonProjectile::OnImpact(const FHitResult& HitResult)
 		TArray<AActor*> OverlappedActors;
 
 		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), HitResult.Location, ExplosionRadius, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
-		//DrawDebugSphere(GetWorld(), HitResult.Location, ExplosionRadius, 24, FColor::Yellow, 5, 1);
+
+		int32 Debug = CVarDebugBasicAttack.GetValueOnGameThread();
+		if (Debug)
+		{
+			DrawDebugSphere(GetWorld(), HitResult.Location, ExplosionRadius, 24, FColor::Green, true, 4.0f);
+		}
 
 		for (AActor* Actor : OverlappedActors)
 		{
