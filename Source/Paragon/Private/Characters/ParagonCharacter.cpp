@@ -249,7 +249,10 @@ void AParagonCharacter::ActivateAbilityInSlot(int32 Slot)
 	{
 		if (AbilitySystem && AbilitiesSlots.Num() > Slot)
 		{
-			AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot], true);
+			if (AbilitiesSlots[Slot] != nullptr)
+			{
+				AbilitySystem->TryActivateAbilityByClass(AbilitiesSlots[Slot], true);
+			}
 		}
 	}
 
@@ -284,18 +287,24 @@ void AParagonCharacter::StartAbility()
 
 void AParagonCharacter::AbilitySlot0()
 {
-	if (bAbilityPressed)
+	if (AbilitySystem && AbilitiesSlots.Num() > 0)
 	{
-		HideAbilityIndicator();
+		if (AbilitiesSlots[0] != nullptr)
+		{
+			if (bAbilityPressed)
+			{
+				HideAbilityIndicator();
 
-		ActivateAbilityInSlot(CurrentActiveAbility);
+				ActivateAbilityInSlot(CurrentActiveAbility);
 
-		bAbilityPressed = false;
-	}
-	else
-	{
-		CurrentActiveAbility = 0;
-		ActivateAbilityInSlot(CurrentActiveAbility);
+				bAbilityPressed = false;
+			}
+			else
+			{
+				CurrentActiveAbility = 0;
+				ActivateAbilityInSlot(CurrentActiveAbility);
+			}
+		}
 	}
 }
 

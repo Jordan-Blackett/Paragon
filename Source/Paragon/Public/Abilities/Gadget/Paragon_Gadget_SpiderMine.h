@@ -47,6 +47,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = ProjectileActor)
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
+
 private:
 	UPROPERTY()
 	TArray<FGameplayEffectSpecHandle> TargetGameplayEffectSpecs;
@@ -68,6 +70,12 @@ private:
 
 	UPROPERTY()
 	float FuzeTime = 1.f;
+
+	UPROPERTY()
+	bool BotArmed = false;
+
+	UPROPERTY()
+	bool MineTriggered = false;
 
 	/** effects for explosion */
 	UPROPERTY(EditDefaultsOnly, Category = Effects)
