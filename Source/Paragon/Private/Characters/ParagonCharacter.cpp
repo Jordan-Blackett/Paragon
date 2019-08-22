@@ -806,6 +806,7 @@ void AParagonCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AParagonCharacter, CharacterLevel);
+	//DOREPLIFETIME(AParagonCharacter, AbilityPoint);
 	//DOREPLIFETIME(AParagonCharacter, AbilitiesHandles);
 	DOREPLIFETIME_CONDITION(AParagonCharacter, AbilityPoint, COND_OwnerOnly);
 }

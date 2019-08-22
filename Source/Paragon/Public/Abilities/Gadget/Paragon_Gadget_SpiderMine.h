@@ -3,81 +3,74 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "GameplayEffectTypes.h"
+#include "Abilities/Gadget/Paragon_Gadget_SpiderBot.h"
 #include "Paragon_Gadget_SpiderMine.generated.h"
 
-//class UGameplayEffect;
 class AParagonExplosionEffect;
 
+/**
+ *
+ */
 UCLASS()
-class PARAGON_API AParagon_Gadget_SpiderMine : public AActor
+class PARAGON_API AParagon_Gadget_SpiderMine : public AParagon_Gadget_SpiderBot
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	AParagon_Gadget_SpiderMine();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void ReachedBotDistance() override;
 
-	UFUNCTION(BlueprintCallable)
-	void Init();
-
-	UFUNCTION()
-	void BotDistance();
+	virtual void DrawDebug() override;
 
 	UFUNCTION()
 	void Explode();
 
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetAbilityPoint(FVector AbilityPoint) { TargetLocation = AbilityPoint; }
-
-	UFUNCTION(BlueprintCallable, Category = "Stats")
-	void SetGameplayEffectSpecs(TArray<FGameplayEffectSpecHandle> GameplayEffectSpecs) { TargetGameplayEffectSpecs = GameplayEffectSpecs; }
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ProjectileActor)
-	class UProjectileMovementComponent* MovementComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = ProjectileActor)
-	class USphereComponent* CollisionComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = ProjectileActor)
-	class USkeletalMeshComponent* SkeletalMeshComponent;
+	UFUNCTION()
+	void OnRep_Explode();
 
 	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 
+public:
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
 private:
-	UPROPERTY()
-	TArray<FGameplayEffectSpecHandle> TargetGameplayEffectSpecs;
-
-	UPROPERTY()
-	FVector InitLocation;
-
-	UPROPERTY()
-	FVector TargetLocation;
+	// Effects for explosion
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
 
 	UPROPERTY()
 	bool bFalling = false;
 
 	UPROPERTY()
-	float TargetDistance;
+	bool bSpiderMineTargetTriggered = false;
+
+	UPROPERTY()
+	bool bActorTargetReached = false;
+
+	UPROPERTY()
+	bool bBotArmed = false;
+
+	UPROPERTY()
+	float HoverOffset = 25.f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Explode)
+	bool bExploded = false;
 
 	UPROPERTY()
 	FTimerHandle RangeTimerHandle;
 
 	UPROPERTY()
+	AActor* TargetedActor = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
+	float ExplosionRange = 500.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
 	float FuzeTime = 1.f;
 
-	UPROPERTY()
-	bool BotArmed = false;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
+	float FallSpeed = 500.f;
 
-	UPROPERTY()
-	bool MineTriggered = false;
-
-	/** effects for explosion */
-	UPROPERTY(EditDefaultsOnly, Category = Effects)
-	TSubclassOf<class AParagonExplosionEffect> ExplosionTemplate;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats")
+	float TargetSpeed = 500.f;
 };

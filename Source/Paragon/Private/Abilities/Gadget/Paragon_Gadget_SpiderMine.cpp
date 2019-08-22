@@ -1,178 +1,93 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Paragon_Gadget_SpiderMine.h"
-#include "AbilitySystemComponent.h"
-#include "AbilitySystemBlueprintLibrary.h"
+#include "Net/UnrealNetwork.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "TimerManager.h"
 #include "ParagonCharacter.h"
-#include "Kismet/KismetMathLibrary.h"
-#include "DrawDebugHelpers.h"
-#include "Paragon.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+#include "DrawDebugHelpers.h"
 #include "ParagonExplosionEffect.h"
 #include "ParagonDebugConsoleVariables.h"
 
 extern TAutoConsoleVariable<int32> CVarDebugBasicAttack;
 
-// Sets default values
-AParagon_Gadget_SpiderMine::AParagon_Gadget_SpiderMine()
+void AParagon_Gadget_SpiderMine::ReachedBotDistance()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
-	CollisionComponent->SetSphereRadius(200.0f);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	SetRootComponent(CollisionComponent);
-
-	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MovementComponent"));
-	MovementComponent->bAutoActivate = false;
-
-	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMesh"));
-	SkeletalMeshComponent->AttachTo(RootComponent);
-}
-
-// Called when the game starts or when spawned
-void AParagon_Gadget_SpiderMine::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (Instigator)
+	if (!bFalling)
 	{
-		CollisionComponent->MoveIgnoreActors.Add(Cast<AActor>(Instigator));
+		// Fall
+		SetActorLocation(TargetLocation);
 
-		// Set Initial Spawn Location
-		InitLocation = GetActorLocation();
+		// Set new travel location
+		MovementComponent->SetVelocityInLocalSpace(GetNewPathDirection(TargetLocation, FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + (-FlyHeight + 20))) * FallSpeed);
 
-		// Set Target Location
-		FVector TargetLocation2 = Cast<AParagonCharacter>(Instigator)->GetAbilityPoint();
-		TargetLocation2.Z += 100; // TODO: Variable
-		SetAbilityPoint(TargetLocation2);
-
-		Init();
-
-		GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.02f, true);
+		bFalling = true;
+		return;
 	}
-}
-
-void AParagon_Gadget_SpiderMine::Init()
-{
-	if (Instigator)
+	else
 	{
-		// Set direction
-		FVector Direction = TargetLocation - InitLocation;
-		Direction = FVector(Direction.X, Direction.Y, Direction.Z);
-		Direction.Normalize();
-		MovementComponent->SetVelocityInLocalSpace(Direction * MovementComponent->InitialSpeed);
+		// Reached Target
+		MovementComponent->StopMovementImmediately();
+		SetActorLocation(TargetLocation);
+		
+		if (!bBotArmed)
+		{
+			// Check Overlapping Pawns
+			TArray<TEnumAsByte<EObjectTypeQuery>> CollisionType;
+			CollisionType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
+			TSubclassOf<AParagonCharacter> ActorFilter;
+			TArray<AActor*> ActorsIgnore;
+			ActorsIgnore.Add(Instigator);
+			TArray<AActor*> OverlappedActors;
 
-		// Set Rotation
-		FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(InitLocation, TargetLocation);
-		Rotation = FRotator(0, Rotation.Yaw + 90, 0);
-		//SetActorRotation(Rotation);
-		SkeletalMeshComponent->SetRelativeRotation(Rotation);
+			UKismetSystemLibrary::SphereOverlapActors(GetWorld(), TargetLocation, CollisionComponent->GetUnscaledSphereRadius(), CollisionType, ActorFilter, ActorsIgnore, OverlappedActors); // TODO: explosion range
 
-		MovementComponent->UpdateComponentToWorld();
-		MovementComponent->Activate();
+			if (OverlappedActors.Num() > 0) {
+				for (AActor* Actor : OverlappedActors)
+				{
+					// Get closest
+					//
+					//
+					TargetedActor = Actor;
 
-		TargetDistance = FVector::Dist(FVector(InitLocation.X, InitLocation.Y, 0), FVector(TargetLocation.X, TargetLocation.Y, 0));
+					// Set new travel location
+					FVector SocketLocation = Cast<AParagonCharacter>(Actor)->GetMesh()->GetSocketLocation("HoverAttachPoint");
+					SocketLocation.Z += HoverOffset;
+					MovementComponent->SetVelocityInLocalSpace(GetNewPathDirection(TargetLocation, SocketLocation) * TargetSpeed);
+
+					bSpiderMineTargetTriggered = true;
+				}
+			}
+
+			GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::Explode, FuzeTime, false);
+			bBotArmed = true;
+		}
+		else if (bSpiderMineTargetTriggered && !bActorTargetReached)
+		{
+			bActorTargetReached = true;
+		}
 
 		// Debug
 		int32 Debug = CVarDebugBasicAttack.GetValueOnGameThread();
 		if (Debug)
 		{
-			DrawDebugLine(GetWorld(), InitLocation, FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z), FColor::Green, true, 4.0f);
-			DrawDebugLine(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z - 100), FColor::Green, true, 4.0f);
-			DrawDebugPoint(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z), 10.f, FColor::Green, true, 4.0f);
-			DrawDebugPoint(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z - 100), 10.f, FColor::Green, true, 4.0f);
+			DrawDebugSphere(GetWorld(), GetActorLocation(), CollisionComponent->GetUnscaledSphereRadius(), 24, FColor::Green, true, 4.f);
 		}
 	}
 }
 
-void AParagon_Gadget_SpiderMine::BotDistance()
+void AParagon_Gadget_SpiderMine::DrawDebug()
 {
-	float Distance = FVector::Dist(InitLocation, GetActorLocation());
-	if (Distance >= TargetDistance || bFalling)
-	{
-		if (!bFalling)
-		{
-			// Fall
-			SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z));
-			FVector Direction = FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z - 100) - GetActorLocation();
-			Direction = FVector(0, 0, Direction.Z);
-			Direction.Normalize();
-			MovementComponent->InitialSpeed = 500; // Todo: variable
-			MovementComponent->SetVelocityInLocalSpace(Direction * MovementComponent->InitialSpeed);
-			bFalling = true;
-			return;
-		}
-
-		// Reached Target
-		if (UKismetMathLibrary::NearlyEqual_FloatFloat(GetActorLocation().Z, TargetLocation.Z - 100, 40))
-		{
-			SetActorLocation(FVector(TargetLocation.X, TargetLocation.Y, (TargetLocation.Z - 100) + 20)); // TODO: mesh size/2
-			MovementComponent->StopMovementImmediately();
-
-			if (!MineTriggered)
-			{
-				// Check Overlapping Pawns
-				if (Role == ROLE_Authority)
-				{
-					TArray<TEnumAsByte<EObjectTypeQuery>> CollisionType;
-					CollisionType.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
-					TSubclassOf<AParagonCharacter> ActorFilter;
-					TArray<AActor*> ActorsIgnore;
-					ActorsIgnore.Add(Instigator);
-					TArray<AActor*> OverlappedActors;
-
-					UKismetSystemLibrary::SphereOverlapActors(GetWorld(), TargetLocation, CollisionComponent->GetUnscaledSphereRadius(), CollisionType, ActorFilter, ActorsIgnore, OverlappedActors); // TODO: explosion range
-
-					if (OverlappedActors.Num() > 0) {
-						for (AActor* Actor : OverlappedActors)
-						{
-							// Get closest
-
-							// Set new travel location
-
-							// Set Initial Spawn Location
-							InitLocation = GetActorLocation();
-
-							// Set Target Location
-							FVector TargetLocation2 = Actor->GetActorLocation();
-							TargetLocation2.Z += 100; // TODO: over socket name
-							SetAbilityPoint(TargetLocation2);
-
-							Init();
-							MineTriggered = true;
-						}
-					}
-					else
-					{
-						GetWorldTimerManager().ClearTimer(RangeTimerHandle);
-						GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::Explode, FuzeTime, false);
-						BotArmed = true;
-					}
-				}
-			}
-			else
-			{
-				GetWorldTimerManager().ClearTimer(RangeTimerHandle);
-				GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::Explode, FuzeTime, false);
-			}
-
-			// Debug
-			int32 Debug = CVarDebugBasicAttack.GetValueOnGameThread();
-			if (Debug)
-			{
-				DrawDebugSphere(GetWorld(), GetActorLocation(), CollisionComponent->GetUnscaledSphereRadius(), 24, FColor::Green, true, 4.f);
-			}
-		}
-	}
+	DrawDebugLine(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + -FlyHeight), FColor::Green, true, 4.0f);
+	DrawDebugPoint(GetWorld(), FVector(TargetLocation.X, TargetLocation.Y, TargetLocation.Z + -FlyHeight), 10.f, FColor::Green, true, 4.0f);
 }
 
 void AParagon_Gadget_SpiderMine::Explode()
 {
+	bExploded = true;
+
 	if (ExplosionTemplate)
 	{
 		FTransform const SpawnTransform(GetActorRotation(), GetActorLocation());
@@ -192,7 +107,7 @@ void AParagon_Gadget_SpiderMine::Explode()
 		ActorsIgnore.Add(Instigator);
 		TArray<AActor*> OverlappedActors;
 
-		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), TargetLocation, 400, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors); // TODO: explosion range
+		UKismetSystemLibrary::SphereOverlapActors(GetWorld(), TargetLocation, ExplosionRange, CollisionType, ActorFilter, ActorsIgnore, OverlappedActors);
 		
 		for (AActor* Actor : OverlappedActors)
 		{
@@ -203,35 +118,66 @@ void AParagon_Gadget_SpiderMine::Explode()
 		int32 Debug = CVarDebugBasicAttack.GetValueOnGameThread();
 		if (Debug)
 		{
-			DrawDebugSphere(GetWorld(), TargetLocation, 400, 24, FColor::Red, true, 4.f);
+			DrawDebugSphere(GetWorld(), TargetLocation, ExplosionRange, 24, FColor::Red, true, 4.f);
 		}
 	}
 
-	Destroy();
+	SetLifeSpan(0.25f);
+	//Destroy();
 }
 
 void AParagon_Gadget_SpiderMine::NotifyActorBeginOverlap(AActor * OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
 
-	if (Role == ROLE_Authority && BotArmed)
+	if (Role == ROLE_Authority && !bSpiderMineTargetTriggered && bBotArmed)
 	{
 		if (OtherActor && OtherActor != Instigator)
 		{
-			GetWorldTimerManager().ClearTimer(RangeTimerHandle);
+			TargetedActor = OtherActor;
 
-			// Set Initial Spawn Location
-			InitLocation = GetActorLocation();
+			// Set new travel location
+			FVector SocketLocation = Cast<AParagonCharacter>(OtherActor)->GetMesh()->GetSocketLocation("HoverAttachPoint");
+			SocketLocation.Z += HoverOffset;
+			MovementComponent->SetVelocityInLocalSpace(GetNewPathDirection(TargetLocation, SocketLocation) * TargetSpeed);
 
-			// Set Target Location
-			FVector TargetLocation2 = OtherActor->GetActorLocation();
-			TargetLocation2.Z += 100; // TODO: over socket name
-			SetAbilityPoint(TargetLocation2);
-
-			Init();
-			GetWorldTimerManager().SetTimer(RangeTimerHandle, this, &AParagon_Gadget_SpiderMine::BotDistance, 0.02f, true);
-			MineTriggered = true;
+			bSpiderMineTargetTriggered = true;
 		}
 	}
 }
 
+void AParagon_Gadget_SpiderMine::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (Role == ROLE_Authority)
+	{
+		if (TargetedActor && bActorTargetReached)
+		{
+			// Hover
+			FVector SocketLocation = Cast<AParagonCharacter>(TargetedActor)->GetMesh()->GetSocketLocation("HoverAttachPoint");
+			SocketLocation.Z += HoverOffset;
+			SetActorLocation(SocketLocation);
+		}
+	}
+}
+
+void AParagon_Gadget_SpiderMine::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AParagon_Gadget_SpiderMine, bExploded, COND_SkipOwner);
+}
+
+void AParagon_Gadget_SpiderMine::OnRep_Explode()
+{
+	if (ExplosionTemplate)
+	{
+		FTransform const SpawnTransform(GetActorRotation(), GetActorLocation());
+		AParagonExplosionEffect* const EffectActor = GetWorld()->SpawnActorDeferred<AParagonExplosionEffect>(ExplosionTemplate, SpawnTransform);
+		if (EffectActor)
+		{
+			UGameplayStatics::FinishSpawningActor(EffectActor, SpawnTransform);
+		}
+	}
+}
